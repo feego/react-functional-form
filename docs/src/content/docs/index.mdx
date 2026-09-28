@@ -8,58 +8,144 @@ hero:
     - text: Get started
       link: /react-functional-form/getting-started/introduction/
       icon: right-arrow
+    - text: Examples
+      link: /react-functional-form/examples/
+      icon: open-book
+      variant: secondary
     - text: View on GitHub
       link: https://github.com/feego/react-functional-form
       icon: external
       variant: minimal
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components'
 import QuickStartDemo from '../../components/demos/QuickStartDemo'
-
-<CardGrid>
-  <Card title="Schema first" icon="document">
-    Describe your form once with `createForm`, `createField` and `createList`. Types are inferred
-    from it.
-  </Card>
-  <Card title="Fully controlled" icon="setting">
-    All state lives in plain React state that you can own, lift, persist or inspect. No refs or
-    hidden stores.
-  </Card>
-  <Card title="Composable" icon="puzzle">
-    Nested forms are just forms. Build an `AddressForm` once and plug it into any parent form.
-  </Card>
-  <Card title="Bring your validators" icon="approve-check">
-    Chainable validator functions, async validation, or any Standard Schema: Zod, Valibot, ArkType.
-  </Card>
-</CardGrid>
 
 ## Try it
 
 <QuickStartDemo client:load />
 
-```tsx
+## Describe the form once, get the types for free
+
+Declare the value types on the fields, or let a Standard Schema provide them. Values, `onSubmit`,
+field props and nested forms are all typed from the schema.
+
+```ts
 const schema = createForm({
-  email: createField<string>([requiredValidator]),
-  password: createField<string>([requiredValidator, createMinLengthValidator(8)]),
-  confirmPassword: createField<string>([createMatchesFieldValidator('password')]),
+  email: createField(z.string().email()),
+  age: createField<number>(),
+  tags: createList(createField<string>()),
 })
 
-function SignUpForm() {
-  const form = useController({ schema, onSubmit: (values) => api.signUp(values) })
-  const getPropsForField = useGetPropsForField(form)
+const form = useController({ schema, onSubmit: (values) => api.save(values) })
+//                                               ^? { email: string; age: number; tags: string[] }
 
-  return (
-    <form onSubmit={form.onSubmit}>
-      <TextInput label="Email" {...getPropsForField('email')} />
-      <TextInput label="Password" type="password" {...getPropsForField('password')} />
-      <TextInput
-        label="Confirm password"
-        type="password"
-        {...getPropsForField('confirmPassword')}
-      />
-      <button disabled={form.submitState.isSubmitting}>Sign up</button>
-    </form>
-  )
-}
+form.setFieldValue('age', '42') // ❌ Type error: age is a number
 ```
+
+[How typing works →](/react-functional-form/guides/typescript/)
+
+## Build a sub-form once, use it anywhere
+
+A nested form is a complete form component with its own schema. Its state lives in the parent, and its
+events bubble up.
+
+```tsx
+function AddressForm({ propsForForm }: { propsForForm: ControllerProps<typeof addressSchema> }) {
+  const form = useController(propsForForm)
+  const getPropsForField = useGetPropsForField(form)
+  return <TextInput label="City" {...getPropsForField('city')} />
+}
+
+const schema = createForm({ billing: addressSchema, shipping: addressSchema })
+
+<AddressForm propsForForm={getPropsForNestedForm('billing')} />
+<AddressForm propsForForm={getPropsForNestedForm('shipping')} />
+```
+
+[Nested forms →](/react-functional-form/guides/nested-forms/)
+
+## Validate your way
+
+Chain built-in validators, write your own (sync or async), or use Zod, Valibot or ArkType. No adapters
+needed.
+
+```ts
+const isAvailable = createValidator(async (username: string) =>
+  (await api.isTaken(username)) ? 'Username taken' : undefined,
+)
+
+const schema = createForm({
+  username: createField<string>([requiredValidator, isAvailable]),
+  email: createField(z.string().email()),
+  password: createField<string>([requiredValidator, createMinLengthValidator(8)]),
+})
+```
+
+[Validation →](/react-functional-form/guides/validation/) ·
+[Zod & Standard Schema →](/react-functional-form/guides/standard-schema/)
+
+## Form state is plain React state
+
+Values, touched and errors are ordinary `[state, setState]` pairs. The controller creates them for you,
+or you can pass your own: lift them to a parent, share them, or persist them.
+
+```ts
+// Any [state, setState] pair works, e.g. one backed by localStorage.
+const valuesStateHook = useLocalStorageState('draft', { title: '', body: '' })
+
+const form = useController({ schema, valuesStateHook }) // the draft survives page reloads
+```
+
+[Controlled & lifted state →](/react-functional-form/guides/lifted-state/)
+
+## Schemas are data
+
+Schemas are plain values, so they can depend on the form's own values.
+
+```ts
+const buildSchema = (method?: 'email' | 'phone') =>
+  createForm({
+    method: createField<'email' | 'phone'>([requiredValidator]),
+    email: method === 'phone' ? undefined : createField<string>([requiredValidator]),
+    phone: method === 'phone' ? createField<string>([requiredValidator]) : undefined,
+  })
+
+const formState = useFormState({ schema: buildSchema() })
+const [values] = formState.valuesStateHook
+const form = useController({ ...formState, schema: buildSchema(values?.method) })
+```
+
+[Schemas →](/react-functional-form/guides/schemas/)
+
+## Lists with stable keys
+
+Add, remove and reorder items. Touched and error state follow each item, and so does its React key.
+
+```tsx
+const members = useController(getPropsForNestedForm('members'))
+const { items, getPropsForItem, append, remove, move } = useFieldArray(members)
+
+items.map(({ key, index }) => (
+  <MemberForm key={key} propsForForm={getPropsForItem(index)} onRemove={() => remove(index)} />
+))
+```
+
+[Field arrays →](/react-functional-form/guides/field-arrays/)
+
+## Everything else a form needs
+
+Submit state, dirty tracking, server errors, validation modes, focus on error, and native inputs.
+
+```tsx
+const form = useController({ schema, mode: 'onChange', shouldFocusError: true, onSubmit })
+
+<input {...getPropsForInput('email')} />
+<button disabled={!form.isDirty || form.submitState.isSubmitting}>Save</button>
+<button type="button" onClick={() => form.reset()}>Discard changes</button>
+
+form.setErrors({ email: 'Already registered' }) // e.g. from the server response
+```
+
+[Submission →](/react-functional-form/guides/submission/) ·
+[Dirty state →](/react-functional-form/guides/dirty-state/) ·
+[Server errors →](/react-functional-form/guides/server-errors/)
