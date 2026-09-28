@@ -37,11 +37,11 @@ import {
   useGetPropsForField,
 } from 'react-functional-form'
 
-const schema = createForm([
-  ['email', createField<string>([requiredValidator])],
-  ['password', createField<string>([requiredValidator, createMinLengthValidator(8)])],
-  ['confirmPassword', createField<string>([createMatchesFieldValidator('password')])],
-])
+const schema = createForm({
+  email: createField<string>([requiredValidator]),
+  password: createField<string>([requiredValidator, createMinLengthValidator(8)]),
+  confirmPassword: createField<string>([createMatchesFieldValidator('password')]),
+})
 
 function SignUpForm() {
   const form = useController({
@@ -68,18 +68,19 @@ function SignUpForm() {
 ```
 
 `getPropsForField(name)` returns `name`, `value`, `error`, `onChange`, `onFocus` and `onBlur`. Errors show
-once a field is blurred, and submitting touches every field.
+once a field is blurred, and submitting touches every field. To turn error codes into messages, pass
+`mapError` to `useController`.
 
 ### With Zod (or Valibot, ArkType…)
 
 ```ts
 import { z } from 'zod'
 
-const schema = createForm([
-  ['email', createField(z.string().email('Enter a valid email'))], // type inferred: string
-  ['password', createField(z.string().min(8))],
-  ['confirmPassword', createField(z.string())],
-])
+const schema = createForm({
+  email: createField(z.string().email('Enter a valid email')), // type inferred: string
+  password: createField(z.string().min(8)),
+  confirmPassword: createField(z.string()),
+})
 
 // Rules across fields: validate the whole form with a schema
 const form = useController({
@@ -98,10 +99,10 @@ const form = useController({
 ### Nested forms
 
 ```tsx
-const addressSchema = createForm([
-  ['street', createField<string>([requiredValidator])],
-  ['city', createField<string>([requiredValidator])],
-])
+const addressSchema = createForm({
+  street: createField<string>([requiredValidator]),
+  city: createField<string>([requiredValidator]),
+})
 
 function AddressForm({ propsForForm }: { propsForForm: ControllerProps<typeof addressSchema> }) {
   const form = useController(propsForForm)
@@ -115,7 +116,7 @@ function AddressForm({ propsForForm }: { propsForForm: ControllerProps<typeof ad
 }
 
 // In the parent:
-const schema = createForm([['billing', addressSchema], ['shipping', addressSchema]])
+const schema = createForm({ billing: addressSchema, shipping: addressSchema })
 const getPropsForNestedForm = useGetPropsForNestedForm(form)
 
 <AddressForm propsForForm={getPropsForNestedForm('billing')} />
@@ -125,17 +126,29 @@ const getPropsForNestedForm = useGetPropsForNestedForm(form)
 ### Field arrays
 
 ```tsx
-const schema = createForm([
-  ['members', createList(memberSchema, [createMinLengthValidator(1, 'Add a member')])],
-])
+const schema = createForm({
+  members: createList(memberSchema, [createMinLengthValidator(1, 'Add a member')]),
+})
 
 const members = useController(useGetPropsForNestedForm(form)('members'))
-const { items, append, remove, move } = useFieldArray(members)
-const getPropsForMember = useGetPropsForNestedForm(members)
+const { items, getPropsForItem, append, remove } = useFieldArray(members)
 
 items.map(({ key, index }) => (
-  <MemberForm key={key} propsForForm={getPropsForMember(index)} onRemove={() => remove(index)} />
+  <MemberForm key={key} propsForForm={getPropsForItem(index)} onRemove={() => remove(index)} />
 ))
+{
+  members.error && <p>{members.error}</p>
+}
+```
+
+### Native inputs
+
+```tsx
+const getPropsForInput = useGetPropsForInput(form)
+
+<input {...getPropsForInput('email')} />
+<input {...getPropsForInput('newsletter', { type: 'checkbox' })} />
+<select {...getPropsForInput('country')}>…</select>
 ```
 
 ## More examples
@@ -152,7 +165,7 @@ pnpm install && pnpm build && pnpm examples:dev
 
 |                  |                                                                                                                |
 | ---------------- | -------------------------------------------------------------------------------------------------------------- |
-| Schemas          | `createForm`, `createField`, `createList`, with inferred TypeScript types                                      |
+| Schemas          | `createForm` (object or entries), `createField`, `createList`, with inferred TypeScript types                  |
 | Validation       | Validator chains, built-ins (`required`, min/max, length, regex, matches field), `createValidator`, `optional` |
 | Schema libraries | Standard Schema per field (`createField(z.string())`) or per form (`createStandardSchemaValidate`)             |
 | Async validation | Async validators, `isValidating`, awaited on submit                                                            |

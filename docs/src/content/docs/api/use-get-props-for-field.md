@@ -9,7 +9,8 @@ const props = getPropsForField(name)
 ```
 
 - `form`: a controller.
-- `mapError(error)`: optional, maps validation errors (e.g. codes to messages).
+- `mapError(error)`: optional, maps validation errors (e.g. codes to messages). Defaults to the
+  controller's `mapError`. Only called for fields with an error.
 
 `name` must be a field of the form (use a number for lists of fields). It returns:
 
@@ -17,7 +18,7 @@ const props = getPropsForField(name)
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | `name`     | The field name.                                                                                                                |
 | `value`    | Current value.                                                                                                                 |
-| `error`    | Mapped error, when invalid.                                                                                                    |
+| `error`    | Mapped error, or `undefined` when valid.                                                                                       |
 | `onChange` | `(value \| changeEvent) => void`. DOM events are unwrapped, see [native inputs](/react-functional-form/guides/native-inputs/). |
 | `onFocus`  | Marks the field visited on first focus.                                                                                        |
 | `onBlur`   | Marks the field touched on first blur (except in `onSubmit` mode).                                                             |

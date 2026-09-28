@@ -1,66 +1,76 @@
 /**
- * Field props spread directly on native elements (change events are unwrapped), and focusing the first
- * invalid field when a submission fails.
+ * Plain DOM elements wired with `useGetPropsForInput`, and focusing the first invalid field when a
+ * submission fails.
  */
 import {
   createField,
   createForm,
   requiredValidator,
   useController,
-  useGetPropsForField,
+  useGetPropsForInput,
 } from 'react-functional-form'
 import { Button, Debug } from '../components/ui'
 import { notify } from '../components/fakeApi'
 
-const schema = createForm([
-  ['name', createField<string>([requiredValidator])],
-  ['plan', createField<string>([requiredValidator])],
-  ['message', createField<string>([requiredValidator])],
-  ['acceptTerms', createField<boolean>([requiredValidator])],
-])
+const schema = createForm({
+  name: createField<string>([requiredValidator]),
+  country: createField<string>([requiredValidator]),
+  plan: createField<'free' | 'pro'>([requiredValidator]),
+  message: createField<string>([requiredValidator]),
+  acceptTerms: createField<boolean>([requiredValidator]),
+})
 
 export default function NativeInputs() {
   const form = useController({
     schema,
-    shouldFocusError: true, // Field props get a `ref`, used to focus the first invalid field.
+    shouldFocusError: true, // Inputs get a `ref`, used to focus the first invalid field.
     onSubmit: (values) => notify(JSON.stringify(values, null, 2)),
   })
-  const getPropsForField = useGetPropsForField(form)
-
-  // `error` isn't a DOM attribute, so take it out before spreading.
-  const { error: nameError, ...name } = getPropsForField('name')
-  const { error: planError, ...plan } = getPropsForField('plan')
-  const { error: messageError, ...message } = getPropsForField('message')
-  const { error: termsError, value: acceptTerms, ...terms } = getPropsForField('acceptTerms')
+  const getPropsForInput = useGetPropsForInput(form)
+  const errorFor = (name: 'name' | 'country' | 'plan' | 'message' | 'acceptTerms') => {
+    const { error } = form.getFieldState(name)
+    return error && <span className="rff-error">{error}</span>
+  }
 
   return (
     <>
       <form onSubmit={form.onSubmit} noValidate>
         <label className="rff-field">
           <span className="rff-label">Name</span>
-          <input className="rff-input" {...name} value={name.value ?? ''} />
-          {nameError && <span className="rff-error">{nameError}</span>}
+          <input className="rff-input" {...getPropsForInput('name')} />
+          {errorFor('name')}
         </label>
 
         <label className="rff-field">
-          <span className="rff-label">Plan</span>
-          <select className="rff-input" {...plan} value={plan.value ?? ''}>
+          <span className="rff-label">Country</span>
+          <select className="rff-input" {...getPropsForInput('country')}>
             <option value="">Choose…</option>
-            <option value="free">Free</option>
-            <option value="pro">Pro</option>
+            <option value="pt">Portugal</option>
+            <option value="us">United States</option>
           </select>
-          {planError && <span className="rff-error">{planError}</span>}
+          {errorFor('country')}
         </label>
+
+        <fieldset className="rff-fieldset">
+          <legend>Plan</legend>
+          <label>
+            <input {...getPropsForInput('plan', { type: 'radio', value: 'free' })} /> Free
+          </label>
+          <label>
+            <input {...getPropsForInput('plan', { type: 'radio', value: 'pro' })} /> Pro
+          </label>
+          {errorFor('plan')}
+        </fieldset>
 
         <label className="rff-field">
           <span className="rff-label">Message</span>
-          <textarea className="rff-input" rows={3} {...message} value={message.value ?? ''} />
-          {messageError && <span className="rff-error">{messageError}</span>}
+          <textarea className="rff-input" rows={3} {...getPropsForInput('message')} />
+          {errorFor('message')}
         </label>
 
         <label>
-          <input type="checkbox" {...terms} checked={Boolean(acceptTerms)} /> I accept the terms
-          {termsError && <span className="rff-error"> (required)</span>}
+          <input {...getPropsForInput('acceptTerms', { type: 'checkbox' })} /> I accept the terms
+          {errorFor('acceptTerms')}
         </label>
 
         <Button type="submit">Send</Button>

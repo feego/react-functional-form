@@ -14,10 +14,10 @@ import {
 import { Button, Debug, TextInput } from '../components/ui'
 import { notify } from '../components/fakeApi'
 
-const addressSchema = createForm([
-  ['street', createField<string>([requiredValidator])],
-  ['city', createField<string>([requiredValidator])],
-])
+const addressSchema = createForm({
+  street: createField<string>([requiredValidator]),
+  city: createField<string>([requiredValidator]),
+})
 
 function AddressForm({
   title,
@@ -38,11 +38,11 @@ function AddressForm({
   )
 }
 
-const schema = createForm([
-  ['name', createField<string>([requiredValidator])],
-  ['billing', addressSchema],
-  ['shipping', addressSchema],
-])
+const schema = createForm({
+  name: createField<string>([requiredValidator]),
+  billing: addressSchema,
+  shipping: addressSchema,
+})
 
 export default function NestedForms() {
   const form = useController({

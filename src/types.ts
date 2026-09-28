@@ -94,12 +94,25 @@ export interface ListSchema<Item extends SchemaNode = SchemaNode> {
 
 export type SchemaNode = FieldSchema<any> | FormSchema<any> | ListSchema<any>
 
+/** Type-only marker for form entries that may not exist (see `createForm`). */
+export interface OptionalNode {
+  readonly '#optional': true
+}
+
 /* -------------------------------------------------------------------------------------------------
  * Type inference from schemas
  * -----------------------------------------------------------------------------------------------*/
 
 type IsLooseFields<F> =
-  IsAny<F> extends true ? true : FieldEntry[] extends F ? true : any[] extends F ? true : false
+  IsAny<F> extends true
+    ? true
+    : F extends ReadonlyArray<infer Entry>
+      ? IsAny<Entry> extends true
+        ? true
+        : FieldEntry extends Entry
+          ? true
+          : false
+      : true
 
 /**
  * Value type described by a schema node.
@@ -108,7 +121,9 @@ type IsLooseFields<F> =
  * const schema = createForm([['name', createField<string>()], ['tags', createList(createField<string>())]])
  * type Values = ValuesOf<typeof schema> // { name: string; tags: string[] }
  */
-export type ValuesOf<S> =
+export type ValuesOf<S> = S extends OptionalNode ? NodeValues<S> | undefined : NodeValues<S>
+
+type NodeValues<S> =
   IsLooseSchema<S> extends true
     ? any
     : S extends FieldSchema<infer V, any>

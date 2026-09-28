@@ -59,16 +59,17 @@ export interface FieldRegistry {
   refs: Map<string, (element: any) => void>
 }
 
-export interface FieldState<V = any> {
+export interface FieldState<V = any, E = any> {
   value: V | undefined
-  error: any
+  /** The field error (or a nested form's own error), mapped with `mapError`. */
+  error: E | undefined
   invalid: boolean
   touched: boolean
   visited: boolean
   dirty: boolean
 }
 
-export interface ControllerProps<S extends SchemaNode = any> {
+export interface ControllerProps<S extends SchemaNode = any, E = any> {
   /** Form (or list) schema. */
   schema: S
   /** Initial values. Only used when the values state is owned by the controller. */
@@ -89,6 +90,11 @@ export interface ControllerProps<S extends SchemaNode = any> {
   isValidating?: boolean
   /** Focus the first invalid field when a submission fails. Fields receive a `ref` to make it possible. */
   shouldFocusError?: boolean
+  /**
+   * Maps validation errors (e.g. error codes into messages). Applies to field props, `getFieldState`,
+   * `error`, and nested forms.
+   */
+  mapError?: (error: any) => E
 
   // All form state goes in these hooks, which can be owned by a parent component or form:
   valuesStateHook?: StateHook<ValuesOf<S>>
@@ -116,13 +122,18 @@ export interface ControllerProps<S extends SchemaNode = any> {
   path?: PropertyKey[]
 }
 
-export interface Controller<S extends SchemaNode = any> {
+export interface Controller<S extends SchemaNode = any, E = any> {
   schema: S
   values: ValuesOf<S>
   touched: TouchedOf<S>
   visited: VisitedOf<S>
   /** `[isValid, childrenResults, ownError?]`. Only touched fields are validated. */
   validationResult: ValidationResultOf<S>
+  /**
+   * Error of the form or list itself (not of its fields), e.g. from a list validator or a schema refinement
+   * without a path. Mapped with `mapError`.
+   */
+  error: E | undefined
   /** Whether async validators are running. */
   isValidating: boolean
   /** Values the form is compared against to know if it's dirty, and reset to. */
@@ -135,6 +146,7 @@ export interface Controller<S extends SchemaNode = any> {
   errors: ErrorsTree
   submitState: SubmitState
   mode: ValidationMode
+  mapError: ((error: any) => E) | undefined
   shouldFocusError: boolean
   fieldRegistry: FieldRegistry
   path: PropertyKey[]
@@ -143,10 +155,10 @@ export interface Controller<S extends SchemaNode = any> {
   onChange: (eventMetadata: EventMetadata, reducer: (values: any) => any, ...args: any[]) => void
   /**
    * Touches every field, validates, and calls `onSubmit` with the values if valid (or `onInvalid`
-   * otherwise). Returns the validation result, or a promise of it when validation or `onSubmit` are async.
-   * Calls `preventDefault` when given a submit event.
+   * otherwise). Returns a promise of the validation result, which resolves once `onSubmit` finishes and
+   * rejects if it throws. Calls `preventDefault` when given a submit event.
    */
-  onSubmit: (...args: any[]) => MaybePromise<ValidationResultOf<S>>
+  onSubmit: (...args: any[]) => Promise<ValidationResultOf<S>>
   onFieldTouchedChange: (
     eventMetadata: EventMetadata,
     reducer: (touched: any) => any,
@@ -176,14 +188,14 @@ export interface Controller<S extends SchemaNode = any> {
    * Touches a field (or every field) so its validation errors show, and returns the validation result for
    * the new touched state.
    */
-  trigger: (name?: ChildName<S>) => MaybePromise<ValidationResultOf<S>>
+  trigger: (name?: ChildName<S>) => Promise<ValidationResultOf<S>>
   /**
    * Resets values, touched, visited, errors and submit state. Given values, they also become the new default
    * values.
    */
   reset: (values?: DeepPartial<ValuesOf<S>>) => void
   /** State of a single field. */
-  getFieldState: <K extends ChildName<S>>(name: K) => FieldState<ValuesOf<ChildSchema<S, K>>>
+  getFieldState: <K extends ChildName<S>>(name: K) => FieldState<ValuesOf<ChildSchema<S, K>>, E>
 }
 
 const isSubmitEvent = (value: any) =>
@@ -207,7 +219,9 @@ const createFieldRegistry = (): FieldRegistry => ({ elements: new Map(), refs: n
  * NOTE: error messages in DEV to when the owner component changes one of the data properties between
  * controlled and uncontrolled.
  */
-function useController<S extends SchemaNode>(props: ControllerProps<S>): Controller<S>
+function useController<S extends SchemaNode, E = any>(
+  props: ControllerProps<S, E>,
+): Controller<S, E>
 function useController(props: ControllerProps<any>): Controller<any> {
   const {
     schema,
@@ -227,6 +241,7 @@ function useController(props: ControllerProps<any>): Controller<any> {
     onFieldBlur = noop,
     onFieldFocus = noop,
     path = [],
+    mapError,
   } = props
 
   // All form state goes in these hooks. They're always created (rules of hooks) but only used when the
@@ -438,8 +453,8 @@ function useController(props: ControllerProps<any>): Controller<any> {
     () =>
       // Bypass by default when in a nested form.
       isNestedFormValues
-        ? baseOnSubmit
-        : (...rest: any[]) => {
+        ? (...rest: any[]) => Promise.resolve((baseOnSubmit as (...args: any[]) => any)(...rest))
+        : (...rest: any[]): Promise<ValidationResult> => {
             if (isSubmitEvent(rest[0]) && !rest[0].defaultPrevented) {
               rest[0].preventDefault()
             }
@@ -496,12 +511,20 @@ function useController(props: ControllerProps<any>): Controller<any> {
               return validationResult
             }
 
-            return isPromise<ValidationResult>(validation)
-              ? validation.then(submit, (error) => {
-                  finish({ isSubmitSuccessful: false, submitError: error })
-                  throw error
-                })
-              : submit(validation)
+            // The work happens synchronously when validation and the handler are sync; the result is always
+            // returned as a promise so callers handle both cases the same way.
+            try {
+              return Promise.resolve(
+                isPromise<ValidationResult>(validation)
+                  ? validation.then(submit, (error) => {
+                      finish({ isSubmitSuccessful: false, submitError: error })
+                      throw error
+                    })
+                  : submit(validation),
+              )
+            } catch (error) {
+              return Promise.reject(error)
+            }
           },
     [
       isNestedFormValues,
@@ -555,7 +578,9 @@ function useController(props: ControllerProps<any>): Controller<any> {
             )
 
       setTouched(() => nextTouched)
-      return getValidationResult(schema, values, nextTouched, combinedErrors, validate)
+      return Promise.resolve(
+        getValidationResult(schema, values, nextTouched, combinedErrors, validate),
+      )
     },
     [schema, touched, values, setTouched, combinedErrors, validate],
   )
@@ -588,6 +613,12 @@ function useController(props: ControllerProps<any>): Controller<any> {
     ],
   )
 
+  const applyMapError = useCallback(
+    (error: unknown) => (error === undefined || !mapError ? error : mapError(error)),
+    [mapError],
+  )
+  const error = applyMapError(validationResult?.[2])
+
   const getFieldState = useCallback(
     (name: PropertyKey): FieldState => {
       const field = getField(schema, name)
@@ -597,7 +628,7 @@ function useController(props: ControllerProps<any>): Controller<any> {
 
       return {
         value: (values as any)?.[name],
-        error: isInvalid ? fieldResult[isNestedForm(field) ? 2 : 1] : undefined,
+        error: isInvalid ? applyMapError(fieldResult[isNestedForm(field) ? 2 : 1]) : undefined,
         invalid: isInvalid,
         touched: isNestedForm(field) ? isAnyTouched(fieldTouched) : Boolean(fieldTouched),
         visited: isNestedForm(field)
@@ -606,7 +637,7 @@ function useController(props: ControllerProps<any>): Controller<any> {
         dirty: getDirtyState(field, (defaultValues as any)?.[name], (values as any)?.[name])[0],
       }
     },
-    [validationResult, touched, visited, values, schema, defaultValues],
+    [validationResult, touched, visited, values, schema, defaultValues, applyMapError],
   )
 
   return {
@@ -617,6 +648,7 @@ function useController(props: ControllerProps<any>): Controller<any> {
     touched,
     visited,
     validationResult,
+    error,
     isValidating,
     defaultValues,
     isDirty,
@@ -624,6 +656,7 @@ function useController(props: ControllerProps<any>): Controller<any> {
     errors,
     submitState,
     mode,
+    mapError,
     shouldFocusError,
     fieldRegistry,
     path,

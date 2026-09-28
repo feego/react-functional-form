@@ -83,6 +83,7 @@ type FieldPropsControllerLike = Pick<Controller, 'schema' | 'values'> &
       | 'shouldFocusError'
       | 'fieldRegistry'
       | 'path'
+      | 'mapError'
     >
   > & { mode?: ValidationMode }
 
@@ -93,13 +94,17 @@ const noop = () => {}
  * `onFocus` and `onBlur` (plus a `ref` when `shouldFocusError` is enabled).
  *
  * @param props - The form controller (the `useController` return value).
- * @param mapError - Maps validation errors into the `error` prop (e.g. error codes into messages).
+ * @param mapError - Maps validation errors into the `error` prop (e.g. error codes into messages). Defaults
+ *   to the controller's `mapError`. Only called for fields that have an error.
  */
+export function useGetPropsForField<S extends SchemaNode, E2, E = any>(
+  props: Controller<S, E>,
+  mapError: (error: any) => E2,
+): <K extends FieldName<S>>(name: K) => FieldProps<ValuesOf<ChildSchema<S, K>>, E2 | undefined, K>
 export function useGetPropsForField<S extends SchemaNode, E = any>(
-  props: Controller<S> | FieldPropsControllerLike,
-  mapError?: (error: any) => E,
-): <K extends FieldName<S>>(name: K) => FieldProps<ValuesOf<ChildSchema<S, K>>, E, K>
-export function useGetPropsForField(props: any, mapError = (error: any) => error) {
+  props: Controller<S, E> | FieldPropsControllerLike,
+): <K extends FieldName<S>>(name: K) => FieldProps<ValuesOf<ChildSchema<S, K>>, E | undefined, K>
+export function useGetPropsForField(props: any, mapErrorOverride?: (error: any) => any) {
   const {
     values,
     validationResult = [false, {}],
@@ -114,7 +119,9 @@ export function useGetPropsForField(props: any, mapError = (error: any) => error
     onFieldFocus = noop,
     onFieldTouchedChange = noop,
     onFieldVisitedChange = noop,
+    mapError: controllerMapError,
   } = props
+  const mapError = mapErrorOverride ?? controllerMapError
   const isListSchema = isList(props.schema)
   const makeOnFieldChange = useCallback(
     ([name, field]: [any, any]) =>
@@ -197,7 +204,10 @@ export function useGetPropsForField(props: any, mapError = (error: any) => error
       const fieldProps: FieldProps = {
         name,
         value: values?.[name],
-        error: mapError(validationResult[1]?.[name]?.[1]),
+        error: (() => {
+          const error = validationResult[1]?.[name]?.[1]
+          return error === undefined || !mapError ? error : mapError(error)
+        })(),
         onChange: makeOnFieldChange([name, field]),
         onFocus: makeOnFieldFocus([name, field]),
         onBlur: makeOnFieldBlur([name, field]),
@@ -209,7 +219,6 @@ export function useGetPropsForField(props: any, mapError = (error: any) => error
 
       return fieldProps
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       props.schema,
       values,
@@ -220,6 +229,7 @@ export function useGetPropsForField(props: any, mapError = (error: any) => error
       shouldFocusError,
       fieldRegistry,
       getRef,
+      mapError,
     ],
   )
 }

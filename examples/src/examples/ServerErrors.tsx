@@ -11,10 +11,10 @@ import {
 import { Button, TextInput } from '../components/ui'
 import { api, notify } from '../components/fakeApi'
 
-const schema = createForm([
-  ['email', createField<string>([requiredValidator])],
-  ['password', createField<string>([requiredValidator])],
-])
+const schema = createForm({
+  email: createField<string>([requiredValidator]),
+  password: createField<string>([requiredValidator]),
+})
 
 export default function ServerErrors() {
   const form = useController({

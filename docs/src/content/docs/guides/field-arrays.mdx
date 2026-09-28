@@ -8,41 +8,40 @@ import FieldArrayDemo from '../../../components/demos/FieldArrayDemo'
 ## Describe the list
 
 ```ts
-const memberSchema = createForm([
-  ['name', createField<string>([requiredValidator])],
-  ['role', createField<string>()],
-])
+const memberSchema = createForm({
+  name: createField<string>([requiredValidator]),
+  role: createField<string>(),
+})
 
-const schema = createForm([
-  ['members', createList(memberSchema, [createMinLengthValidator(1, 'Add at least one member')])],
-])
+const schema = createForm({
+  members: createList(memberSchema, [createMinLengthValidator(1, 'Add at least one member')]),
+})
 ```
 
 The values are a real array: `{ members: { name: string; role: string }[] }`. List-level validators
-receive the whole array, and their error is `members.validationResult[2]`.
+receive the whole array, and their error is the list controller's `error`.
 
 ## Render and edit it
 
 A list is a nested form whose keys are indexes, so you get a controller for it the same way. Then
-`useFieldArray` gives you the operations and stable keys:
+`useFieldArray` gives you the items with stable keys, the props for each item, and the operations:
 
 ```tsx
 function TeamForm() {
   const form = useController({ schema, onSubmit })
   const members = useController(useGetPropsForNestedForm(form)('members'))
-  const { items, append, remove, move } = useFieldArray(members)
-  const getPropsForMember = useGetPropsForNestedForm(members)
+  const { items, getPropsForItem, append, remove } = useFieldArray(members)
 
   return (
     <form onSubmit={form.onSubmit}>
       {items.map(({ key, index }) => (
         <MemberForm
           key={key}
-          propsForForm={getPropsForMember(index)}
+          propsForForm={getPropsForItem(index)}
           onRemove={() => remove(index)}
         />
       ))}
-      {members.validationResult[2] && <p>{members.validationResult[2]}</p>}
+      {members.error && <p>{members.error}</p>}
       <button type="button" onClick={() => append({ name: '', role: '' })}>
         Add member
       </button>
@@ -57,6 +56,7 @@ function TeamForm() {
 
 | Method                     | Description                                                 |
 | -------------------------- | ----------------------------------------------------------- |
+| `getPropsForItem(index)`   | Props for an item (see below)                               |
 | `append(value \| values)`  | Adds items at the end                                       |
 | `prepend(value \| values)` | Adds items at the start                                     |
 | `insert(index, value)`     | Adds items at an index                                      |
@@ -73,22 +73,25 @@ fire `onChange` with an `arrayOperation` in the event metadata.
 Use `items[i].key` as the React key. It follows the item when it moves, so component state (focus, local
 UI state) stays with the right row.
 
-## Lists of plain fields
+## Item props
 
-For lists of primitives, use `useGetPropsForField` on the list controller with indexes:
+`getPropsForItem(index)` adapts to the item schema:
+
+- for **lists of forms** (or lists), it returns the props for the item's own `useController`, like
+  `useGetPropsForNestedForm`;
+- for **lists of fields**, it returns field props to spread on an input, like `useGetPropsForField`.
 
 ```tsx
 const tags = useController(getPropsForNestedForm('tags'))
-const { items, append } = useFieldArray(tags)
-const getPropsForTag = useGetPropsForField(tags)
+const { items, getPropsForItem, append } = useFieldArray(tags)
 
 items.map(({ key, index }) => (
-  <TextInput key={key} label={`Tag ${index + 1}`} {...getPropsForTag(index)} />
+  <TextInput key={key} label={`Tag ${index + 1}`} {...getPropsForItem(index)} />
 ))
 ```
 
 ## Object-keyed lists
 
-Before `createList`, lists were modeled as forms with numeric keys (`createForm([[0, item], [1, item]])`),
+Before `createList`, lists were modeled as forms with numeric keys (`createForm({ 0: item, 1: item })`),
 rebuilding the schema when items change. That still works, but `createList` + `useFieldArray` is simpler
 and produces real arrays.

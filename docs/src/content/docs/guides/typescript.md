@@ -8,12 +8,12 @@ values, `onSubmit`, field props, nested forms, list items, validation results) i
 schema.
 
 ```ts
-const schema = createForm([
-  ['email', createField<string>([requiredValidator])],
-  ['age', createField<number>()],
-  ['address', createForm([['city', createField<string>()]])],
-  ['tags', createList(createField<string>())],
-])
+const schema = createForm({
+  email: createField<string>([requiredValidator]),
+  age: createField<number>(),
+  address: createForm({ city: createField<string>() }),
+  tags: createList(createField<string>()),
+})
 
 type Values = ValuesOf<typeof schema>
 // {
@@ -75,9 +75,15 @@ useController({
 
 ## Form types
 
-`createForm` infers a key for every `[name, node]` entry. Nested forms become nested objects and lists
-become arrays. This works when the entries are written **inline**. For entries stored in a variable, add
-`as const`. Otherwise TypeScript widens them to plain arrays and the form becomes untyped:
+`createForm` infers a key for every field. Nested forms become nested objects and lists become arrays.
+
+```ts
+createForm({ name: createField<string>() }) // { name: string }
+```
+
+With the [entries syntax](/react-functional-form/guides/schemas/#forms), write the entries inline, or add
+`as const` when they're stored in a variable. Otherwise TypeScript widens them to plain arrays and the form
+becomes untyped:
 
 ```ts
 createForm([['name', createField<string>()]]) // { name: string }
@@ -89,25 +95,23 @@ const looseEntries = [['name', createField<string>()]]
 createForm(looseEntries) // Record<PropertyKey, any>, untyped
 ```
 
-### Schemas that change shape
+### Fields that exist only sometimes
 
-A schema built from the values can have fields that exist only sometimes. Mark each alternative
-`as const` so every possible key stays typed, and type those fields `| undefined`, since only one exists at
-a time:
+When a schema is built from the values, some fields may exist only sometimes. Set them to `undefined`
+when they don't exist. Their values are then typed `| undefined`:
 
 ```ts
 const buildSchema = (contactMethod?: 'email' | 'phone') =>
-  createForm([
-    ['name', createField<string>([requiredValidator])],
-    contactMethod === 'phone'
-      ? (['phone', createField<string | undefined>([requiredValidator])] as const)
-      : (['email', createField<string | undefined>([requiredValidator])] as const),
-  ])
-// { name: string; phone: string | undefined; email: string | undefined }
+  createForm({
+    name: createField<string>([requiredValidator]),
+    email: contactMethod === 'phone' ? undefined : createField<string>([requiredValidator]),
+    phone: contactMethod === 'phone' ? createField<string>([requiredValidator]) : undefined,
+  })
+// { name: string; email: string | undefined; phone: string | undefined }
 ```
 
-Without `as const`, the conditional key is widened to `string` and you get an index signature
-(`{ [key: string]: string; name: string }`).
+Avoid spreading conditional objects (`...(isPhone ? { phone } : { email })`): TypeScript only keeps the
+keys the alternatives have in common, so `phone` and `email` would disappear from the type.
 
 ## Values are typed as declared, not as "maybe empty"
 
@@ -139,6 +143,8 @@ For `const form = useController({ schema })`:
 | `getFieldState(name)`        | `{ value: V \| undefined; error; invalid; touched; visited; dirty }`                   |
 | `reset(values?)`             | `values: DeepPartial<Values>`                                                          |
 | `onSubmit` prop              | `(values: Values, ...args) => any`                                                     |
+| `onSubmit()`, `trigger()`    | `Promise<ValidationResultOf<typeof schema>>`                                           |
+| `error`                      | The form's own error, typed by `mapError`                                              |
 
 ```ts
 form.setFieldValue('age', 31) // ✅
@@ -164,12 +170,18 @@ getPropsForField('nope') // ❌ Type error: unknown field
 ### Typing errors
 
 Validators can return any kind of error (codes, messages, objects), so errors are typed `any`. To type
-the `error` prop, map it: its type is the return type of `mapError`.
+them, pass `mapError` to `useController`. Its return type becomes the error type of the field props,
+`getFieldState`, `form.error`, and every nested form:
 
 ```ts
-const getPropsForField = useGetPropsForField(form, (code: string) => messages[code])
-getPropsForField('email').error // string
+const form = useController({ schema, mapError: (code: string) => messages[code] })
+
+useGetPropsForField(form)('email').error // string | undefined
+form.getFieldState('email').error // string | undefined
+useController(useGetPropsForNestedForm(form)('address')).error // string | undefined
 ```
+
+A `mapError` passed to `useGetPropsForField` overrides the controller's and types that getter's errors.
 
 ## Nested forms and lists
 
@@ -182,10 +194,13 @@ const getPropsForNestedForm = useGetPropsForNestedForm(form)
 const address = useController(getPropsForNestedForm('address'))
 address.values // { city: string }
 
-const tags = useController(getPropsForNestedForm('tags')) // a list controller
-useGetPropsForField(tags)(0).value // string | undefined: list items are indexed by number
-useFieldArray(tags).append('new tag') // ✅ item type: string
-useFieldArray(tags).append(42) // ❌ Type error
+const tags = useFieldArray(useController(getPropsForNestedForm('tags')))
+tags.getPropsForItem(0).value // string | undefined: field props for a list of fields
+tags.append('new tag') // ✅ item type: string
+tags.append(42) // ❌ Type error
+
+const members = useFieldArray(useController(getPropsForNestedForm('members')))
+useController(members.getPropsForItem(0)).values // { email: string }: controller props for a list of forms
 ```
 
 ## Typing components

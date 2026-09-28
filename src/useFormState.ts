@@ -26,13 +26,13 @@ export interface FormState<S extends SchemaNode = any> {
  * is created (e.g. to build a schema that depends on the values), or owned by a parent component.
  *
  * @example
- * const formState = useState({ schema: initialSchema, initialValues })
+ * const formState = useFormState({ schema: initialSchema, initialValues })
  * const schema = buildSchema(formState.valuesStateHook[0])
  * const propsForForm = useController({ ...formState, schema })
  */
-export function useState<S extends SchemaNode>(options: FormStateOptions<S>): FormState<S>
-export function useState(options?: any): FormState<any>
-export function useState({
+export function useFormState<S extends SchemaNode>(options: FormStateOptions<S>): FormState<S>
+export function useFormState(options?: any): FormState<any>
+export function useFormState({
   schema,
   initialValues,
   validateOnInit,
@@ -59,4 +59,9 @@ export function useState({
   }
 }
 
-export default useState
+/**
+ * @deprecated Renamed to `useFormState`, to avoid clashing with React's `useState`.
+ */
+export const useState = useFormState
+
+export default useFormState

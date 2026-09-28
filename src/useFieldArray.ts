@@ -1,9 +1,10 @@
 import { useCallback, useMemo, useRef } from 'react'
-import { buildEventMetadata } from './useGetPropsForField'
-import { getField } from './schemaUtils'
+import useGetPropsForField, { buildEventMetadata, type FieldProps } from './useGetPropsForField'
+import useGetPropsForNestedForm from './useGetPropsForNestedForm'
+import { getField, isNestedForm } from './schemaUtils'
 import { assign, expandTouched } from './utils'
-import type { Controller } from './useController'
-import type { ArrayOperation, ListSchema, SchemaNode, ValuesOf } from './types'
+import type { Controller, ControllerProps } from './useController'
+import type { ArrayOperation, FieldSchema, ListSchema, SchemaNode, ValuesOf } from './types'
 
 let keyCounter = 0
 const createKey = () => `rff-${(keyCounter += 1)}`
@@ -38,9 +39,23 @@ export interface FieldArrayItem {
   index: number
 }
 
-export interface FieldArray<Item = any> {
+/**
+ * Props for a list item: field props for lists of fields, or props for the item's `useController` for
+ * lists of forms (or lists).
+ */
+export type ItemProps<ItemSchema, E = any> =
+  ItemSchema extends FieldSchema<any, any>
+    ? FieldProps<ValuesOf<ItemSchema>, E | undefined, number>
+    : ControllerProps<ItemSchema extends SchemaNode ? ItemSchema : any, E>
+
+export interface FieldArray<Item = any, ItemSchema = any, E = any> {
   /** One entry per item, with a stable `key` that follows the item when it moves. */
   items: FieldArrayItem[]
+  /**
+   * Props for the item at `index`: field props to spread on an input for lists of fields, or props for the
+   * item's own `useController` for lists of forms.
+   */
+  getPropsForItem: (index: number) => ItemProps<ItemSchema, E>
   append: (value: Item | Item[]) => void
   prepend: (value: Item | Item[]) => void
   insert: (index: number, value: Item | Item[]) => void
@@ -62,16 +77,19 @@ export interface FieldArray<Item = any> {
  *
  * @example
  * const members = useController(getPropsForNestedForm('members'))
- * const { items, append, remove } = useFieldArray(members)
- * const getPropsForMember = useGetPropsForNestedForm(members)
+ * const { items, getPropsForItem, append, remove } = useFieldArray(members)
  *
  * items.map(({ key, index }) => (
- *   <MemberForm key={key} propsForForm={getPropsForMember(index)} onRemove={() => remove(index)} />
+ *   <MemberForm key={key} propsForForm={getPropsForItem(index)} onRemove={() => remove(index)} />
  * ))
  */
-export function useFieldArray<S extends ListSchema<any>>(
-  controller: Controller<S>,
-): FieldArray<ValuesOf<S extends ListSchema<infer I> ? I : SchemaNode>>
+export function useFieldArray<S extends ListSchema<any>, E = any>(
+  controller: Controller<S, E>,
+): FieldArray<
+  ValuesOf<S extends ListSchema<infer I> ? I : SchemaNode>,
+  S extends ListSchema<infer I> ? I : any,
+  E
+>
 export function useFieldArray(controller: Controller<any>): FieldArray<any> {
   const {
     schema,
@@ -92,6 +110,16 @@ export function useFieldArray(controller: Controller<any>): FieldArray<any> {
         ? [...keysRef.current, ...createKeys(values.length - keysRef.current.length)]
         : keysRef.current.slice(0, values.length)
   }
+
+  const getPropsForField = useGetPropsForField(controller)
+  const getPropsForNestedForm = useGetPropsForNestedForm(controller)
+  const getPropsForItem = useCallback(
+    (index: number) =>
+      isNestedForm(getField(schema, index))
+        ? getPropsForNestedForm(index)
+        : getPropsForField(index),
+    [schema, getPropsForField, getPropsForNestedForm],
+  )
 
   const keys = keysRef.current
   const items = useMemo(() => keys.map((key, index) => ({ key, index })), [keys])
@@ -147,6 +175,7 @@ export function useFieldArray(controller: Controller<any>): FieldArray<any> {
   return useMemo(
     () => ({
       items,
+      getPropsForItem,
       append: (value) => {
         const newValues = toArray(value)
         apply({ type: 'append', count: newValues.length }, insertAt(values.length, newValues))
@@ -190,7 +219,7 @@ export function useFieldArray(controller: Controller<any>): FieldArray<any> {
       replace: (newValues) =>
         apply({ type: 'replace' }, (_array, fill) => newValues.map(fill), { resetState: true }),
     }),
-    [items, apply, values, onChange, validationResult, schema],
+    [items, getPropsForItem, apply, values, onChange, validationResult, schema],
   )
 }
 

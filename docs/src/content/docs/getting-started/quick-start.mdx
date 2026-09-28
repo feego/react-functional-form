@@ -18,11 +18,11 @@ import {
   requiredValidator,
 } from 'react-functional-form'
 
-const schema = createForm([
-  ['email', createField<string>([requiredValidator])],
-  ['password', createField<string>([requiredValidator, createMinLengthValidator(8)])],
-  ['confirmPassword', createField<string>([createMatchesFieldValidator('password')])],
-])
+const schema = createForm({
+  email: createField<string>([requiredValidator]),
+  password: createField<string>([requiredValidator, createMinLengthValidator(8)]),
+  confirmPassword: createField<string>([createMatchesFieldValidator('password')]),
+})
 ```
 
 ## 2. Create the controller
@@ -75,8 +75,8 @@ blurred ("touched"). Submitting touches every field.
 
 ## 4. Show friendly messages
 
-Validators return error **codes** such as `'Required'` and `'TooShort'`. Map them to messages with the
-second argument of `useGetPropsForField`:
+Validators return error **codes** such as `'Required'` and `'TooShort'`. Map them to messages with
+`mapError`. It applies to every field, including nested forms:
 
 ```ts
 const messages = {
@@ -84,7 +84,12 @@ const messages = {
   [Errors.TooShort]: 'Use at least 8 characters',
   [Errors.Mismatch]: "Passwords don't match",
 }
-const getPropsForField = useGetPropsForField(form, (error) => error && messages[error])
+
+const form = useController({
+  schema,
+  mapError: (code: string) => messages[code] ?? code,
+  onSubmit: async (values) => api.signUp(values),
+})
 ```
 
 ## Result

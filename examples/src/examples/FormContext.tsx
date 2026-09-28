@@ -13,10 +13,10 @@ import {
 import { Button, TextInput } from '../components/ui'
 import { notify, wait } from '../components/fakeApi'
 
-const schema = createForm([
-  ['firstName', createField<string>([requiredValidator])],
-  ['lastName', createField<string>([requiredValidator])],
-])
+const schema = createForm({
+  firstName: createField<string>([requiredValidator]),
+  lastName: createField<string>([requiredValidator]),
+})
 
 function NameField({ name, label }: { name: 'firstName' | 'lastName'; label: string }) {
   const form = useFormContext<typeof schema>()

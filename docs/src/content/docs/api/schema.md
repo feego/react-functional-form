@@ -16,16 +16,21 @@ function createField<S extends StandardSchemaV1, M = any>(
 Creates a field. `validators` run in order; a [Standard Schema](/react-functional-form/guides/standard-schema/)
 can be given instead. `metadata` is stored as `field.metadata`.
 
-## `createForm(entries)`
+## `createForm(fields)`
 
 ```ts
+function createForm<const Fields extends Record<string, SchemaNode | undefined>>(
+  fields: Fields,
+): FormSchema<EntriesOf<Fields>>
 function createForm<const Entries extends readonly (readonly [PropertyKey, SchemaNode])[]>(
   entries: Entries,
 ): FormSchema<Entries>
 ```
 
-Creates a form from `[name, node]` entries. Nodes are fields, forms or lists. Literal entries give fully
-inferred types. Dynamically built entry arrays are accepted too, with loose types.
+Creates a form from an object of nodes, or from `[name, node]` entries. Nodes are fields, forms or lists.
+In the object form, nodes set to `undefined` are left out and typed `| undefined`. Literal objects and
+entries give fully inferred types; dynamically built entry arrays are accepted too, with loose types. See
+[schemas](/react-functional-form/guides/schemas/#forms).
 
 ## `createList(item, validators?)`
 
@@ -37,7 +42,7 @@ function createList<Item extends SchemaNode>(
 ```
 
 Creates a list whose items share the `item` schema. `validators` receive the whole array. Their error is the
-third element of the list's validation result.
+third element of the list's validation result, and the list controller's `error`.
 
 ## Utilities
 

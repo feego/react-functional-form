@@ -12,11 +12,6 @@ import {
   Errors,
   getField,
   getFields,
-  getAllFieldsTouched,
-  getInitialTouched,
-  getInitialValues,
-  getInitialVisited,
-  getValidationResult,
   identityValidator,
   requiredValidator,
   useController,
@@ -24,8 +19,15 @@ import {
   useGetPropsForNestedForm,
   useState,
   validate,
-  validateField,
 } from '../src'
+import {
+  getAllFieldsTouched,
+  getInitialTouched,
+  getInitialValues,
+  getInitialVisited,
+  getValidationResult,
+} from '../src/utils'
+import { validateField } from '../src/validate'
 
 const addressSchema = createForm([
   ['street', createField([requiredValidator])],
@@ -215,14 +217,15 @@ describe('useController', () => {
     })
   })
 
-  it('touches every field on submit and only submits valid values', () => {
+  it('touches every field on submit and only submits valid values', async () => {
     const onSubmit = vi.fn()
     const onResult = vi.fn()
     render(<Form onSubmit={onSubmit} onResult={onResult} initialValues={{ age: '30' }} />)
 
     fireEvent.click(screen.getByText('Submit'))
     expect(onSubmit).not.toHaveBeenCalled()
-    expect(onResult.mock.calls[0][0][0]).toBe(false)
+    // `onSubmit` returns a promise of the validation result (since 1.0).
+    expect((await onResult.mock.calls[0][0])[0]).toBe(false)
     expect(screen.getAllByRole('alert').map((node) => node.textContent)).toEqual([
       'Name: Required',
       'Street: Required',
@@ -238,7 +241,7 @@ describe('useController', () => {
       { name: 'Ann', age: '30', address: { street: 'Main St', zip: '1234' } },
       'extra',
     )
-    expect(onResult.mock.calls[1][0][0]).toBe(true)
+    expect((await onResult.mock.calls[1][0])[0]).toBe(true)
   })
 
   it('supports initial values, validateOnInit and additional errors', () => {

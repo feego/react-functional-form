@@ -16,15 +16,15 @@ import {
 import { Button, Debug, TextInput } from '../components/ui'
 import { notify } from '../components/fakeApi'
 
-const memberSchema = createForm([
-  ['name', createField<string>([requiredValidator])],
-  ['role', createField<string>()],
-])
+const memberSchema = createForm({
+  name: createField<string>([requiredValidator]),
+  role: createField<string>(),
+})
 
-const schema = createForm([
-  ['team', createField<string>([requiredValidator])],
-  ['members', createList(memberSchema, [createMinLengthValidator(1, 'Add at least one member')])],
-])
+const schema = createForm({
+  team: createField<string>([requiredValidator]),
+  members: createList(memberSchema, [createMinLengthValidator(1, 'Add at least one member')]),
+})
 
 function MemberRow({
   propsForForm,
@@ -65,9 +65,7 @@ export default function FieldArrays() {
   const getPropsForField = useGetPropsForField(form)
   // The list is a nested form whose keys are indexes.
   const members = useController(useGetPropsForNestedForm(form)('members'))
-  const { items, append, remove, move } = useFieldArray(members)
-  const getPropsForMember = useGetPropsForNestedForm(members)
-  const listError = members.validationResult[2]
+  const { items, getPropsForItem, append, remove, move } = useFieldArray(members)
 
   return (
     <>
@@ -76,12 +74,12 @@ export default function FieldArrays() {
         {items.map(({ key, index }) => (
           <MemberRow
             key={key}
-            propsForForm={getPropsForMember(index)}
+            propsForForm={getPropsForItem(index)}
             onRemove={() => remove(index)}
             onMoveUp={index > 0 ? () => move(index, index - 1) : undefined}
           />
         ))}
-        {listError && <p className="rff-error">{listError}</p>}
+        {members.error && <p className="rff-error">{members.error}</p>}
         <div className="rff-actions">
           <Button variant="secondary" onClick={() => append({ name: '', role: '' })}>
             Add member

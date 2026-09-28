@@ -88,15 +88,20 @@ behavior. See [validation modes](/react-functional-form/guides/validation-modes/
 ```
 
 Most of the time you read errors through `getPropsForField(name).error` or `form.getFieldState(name)`.
+The error of a form or list itself (the third element) is also available as the controller's `error`.
 
 ## Error messages
 
-Keep validators returning codes and map them to messages in the UI:
+Keep validators returning codes and map them to messages with `mapError` on the controller:
 
 ```ts
-const messages = { Required: 'Required', TooShort: 'Too short' }
-const getPropsForField = useGetPropsForField(form, (error) => error && messages[error])
+const messages = { Required: 'This field is required', TooShort: 'Too short' }
+const form = useController({ schema, mapError: (code: string) => messages[code] ?? code })
 ```
+
+`mapError` is only called for fields that have an error. It applies to field props, `getFieldState`,
+the form's own `error`, and every nested form and list. To map one getter's errors differently, pass a
+function as the second argument of `useGetPropsForField`, which overrides the controller's.
 
 Or return messages directly (`createMinLengthValidator(8, 'Use at least 8 characters')`).
 

@@ -15,12 +15,12 @@ import {
   createStandardSchemaValidator,
   createValidator,
   Errors,
-  getAllFieldsTouched,
   optional,
   requiredValidator,
   validate,
-  validateField,
 } from '../src'
+import { getAllFieldsTouched } from '../src/utils'
+import { validateField } from '../src/validate'
 
 const run = (validators: any[], value: unknown, values: any = {}) =>
   validateField(createField(validators), value, { fieldName: 'field', fields: [], values })

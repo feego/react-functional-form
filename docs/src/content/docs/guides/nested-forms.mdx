@@ -9,10 +9,10 @@ A nested form is a form node inside another form. What makes it useful is that t
 a complete form: it calls `useController` with the props its parent gives it.
 
 ```tsx
-const addressSchema = createForm([
-  ['street', createField<string>([requiredValidator])],
-  ['city', createField<string>([requiredValidator])],
-])
+const addressSchema = createForm({
+  street: createField<string>([requiredValidator]),
+  city: createField<string>([requiredValidator]),
+})
 
 function AddressForm({ propsForForm }: { propsForForm: ControllerProps<typeof addressSchema> }) {
   const form = useController(propsForForm)
@@ -30,10 +30,7 @@ function AddressForm({ propsForForm }: { propsForForm: ControllerProps<typeof ad
 The parent includes the schema and hands down props with `useGetPropsForNestedForm`:
 
 ```tsx
-const schema = createForm([
-  ['billing', addressSchema],
-  ['shipping', addressSchema],
-])
+const schema = createForm({ billing: addressSchema, shipping: addressSchema })
 
 function CheckoutForm() {
   const form = useController({ schema, onSubmit })

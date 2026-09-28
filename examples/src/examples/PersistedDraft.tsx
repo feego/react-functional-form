@@ -33,10 +33,10 @@ function useLocalStorageState<T>(key: string, initialValue: T) {
   return [state, setPersistedState] as const
 }
 
-const schema = createForm([
-  ['title', createField<string>([requiredValidator])],
-  ['body', createField<string>([requiredValidator])],
-])
+const schema = createForm({
+  title: createField<string>([requiredValidator]),
+  body: createField<string>([requiredValidator]),
+})
 
 export default function PersistedDraft() {
   const valuesStateHook = useLocalStorageState('rff-example-draft', { title: '', body: '' })

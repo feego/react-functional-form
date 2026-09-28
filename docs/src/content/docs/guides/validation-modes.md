@@ -23,5 +23,5 @@ The mode flows down to nested forms and lists.
 
 - `validateOnInit: true` starts with every field touched.
 - `form.trigger('email')` touches one field (or nested form), and `form.trigger()` touches all of them.
-  Both return the validation result for the new touched state (a promise if validation is async).
+  Both return a promise of the validation result for the new touched state.
 - `form.setTouched(updater)` gives you full control.

@@ -13,12 +13,12 @@ import { Button, Debug, TextInput } from '../components/ui'
 import { notify } from '../components/fakeApi'
 
 // Field-level schemas. The value types are inferred from them.
-const schema = createForm([
-  ['username', createField(z.string().min(3, 'At least 3 characters'))],
-  ['age', createField(z.coerce.number().int().min(18, 'You must be an adult'))],
-  ['password', createField(z.string().min(8, 'At least 8 characters'))],
-  ['confirmPassword', createField(z.string())],
-])
+const schema = createForm({
+  username: createField(z.string().min(3, 'At least 3 characters')),
+  age: createField(z.coerce.number().int().min(18, 'You must be an adult')),
+  password: createField(z.string().min(8, 'At least 8 characters')),
+  confirmPassword: createField(z.string()),
+})
 
 // A form-level schema for rules that involve several fields. Issues are mapped to fields by path.
 const validate = createStandardSchemaValidate(

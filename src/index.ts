@@ -1,17 +1,15 @@
 // Hooks
-export { default as useController, initialSubmitState } from './useController'
-export type { Controller, ControllerProps, FieldRegistry, FieldState } from './useController'
-export {
-  default as useGetPropsForField,
-  getEventValue,
-  buildEventMetadata,
-} from './useGetPropsForField'
+export { default as useController } from './useController'
+export type { Controller, ControllerProps, FieldState } from './useController'
+export { default as useGetPropsForField } from './useGetPropsForField'
 export type { FieldProps } from './useGetPropsForField'
+export { default as useGetPropsForInput } from './useGetPropsForInput'
+export type { InputOptions, InputProps } from './useGetPropsForInput'
 export { default as useGetPropsForNestedForm } from './useGetPropsForNestedForm'
 export { default as useFieldArray } from './useFieldArray'
-export type { FieldArray, FieldArrayItem } from './useFieldArray'
-export { default as useState } from './useState'
-export type { FormState, FormStateOptions } from './useState'
+export type { FieldArray, FieldArrayItem, ItemProps } from './useFieldArray'
+export { useFormState, useState } from './useFormState'
+export type { FormState, FormStateOptions } from './useFormState'
 export { default as useDirtyValues } from './useDirtyValues'
 export { FormProvider, useFormContext } from './context'
 export type { FormProviderProps } from './context'
@@ -28,6 +26,7 @@ export {
   isList,
   map,
 } from './schemaUtils'
+export type { EntriesOf } from './schemaUtils'
 
 // Validation
 export {
@@ -45,7 +44,6 @@ export {
   createValidator,
   optional,
   isEmptyValue,
-  validateField,
 } from './validate'
 export {
   createStandardSchemaValidator,
@@ -53,16 +51,5 @@ export {
 } from './standardSchemaValidators'
 export type { MapIssues, StandardSchemaValidateOptions } from './standardSchemaValidators'
 export type { StandardSchemaV1 } from './standardSchema'
-
-// State utilities
-export {
-  getInitialValues,
-  getInitialTouched,
-  getInitialVisited,
-  getAllFieldsTouched,
-  getValidationResult,
-  getDirtyState,
-  mergeAdditionalErrors,
-} from './utils'
 
 export type * from './types'

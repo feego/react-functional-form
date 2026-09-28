@@ -16,17 +16,14 @@ import {
 import { Button, Debug, TextInput } from '../components/ui'
 import { notify, wait } from '../components/fakeApi'
 
-const schema = createForm([
-  [
-    'email',
-    createField<string>([
-      requiredValidator,
-      optional(createRegexValidator(/^\S+@\S+$/, 'InvalidEmail')),
-    ]),
-  ],
-  ['password', createField<string>([requiredValidator, createMinLengthValidator(8)])],
-  ['confirmPassword', createField<string>([createMatchesFieldValidator('password')])],
-])
+const schema = createForm({
+  email: createField<string>([
+    requiredValidator,
+    optional(createRegexValidator(/^\S+@\S+$/, 'InvalidEmail')),
+  ]),
+  password: createField<string>([requiredValidator, createMinLengthValidator(8)]),
+  confirmPassword: createField<string>([createMatchesFieldValidator('password')]),
+})
 
 // Validators return error codes; the UI decides how to phrase them.
 const messages: Record<string, string> = {
@@ -39,12 +36,13 @@ const messages: Record<string, string> = {
 export default function SignUpForm() {
   const form = useController({
     schema,
+    mapError: (code: string) => messages[code] ?? code,
     onSubmit: async (values) => {
       await wait(800)
       notify(`Signed up as ${values.email}`)
     },
   })
-  const getPropsForField = useGetPropsForField(form, (error) => error && messages[error])
+  const getPropsForField = useGetPropsForField(form)
 
   return (
     <>

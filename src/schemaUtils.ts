@@ -2,6 +2,7 @@ import { isStandardSchema, type StandardSchemaV1 } from './standardSchema'
 import { createStandardSchemaValidator } from './standardSchemaValidators'
 import type {
   FieldEntry,
+  OptionalNode,
   FieldSchema,
   FormSchema,
   ListSchema,
@@ -53,10 +54,31 @@ export function createField(validators: any = [], metadata?: any): FieldSchema {
 }
 
 /**
- * Creates a form schema from a list of `[name, schemaNode]` entries. Nodes can be fields, nested forms or
- * lists.
+ * Entries of a form described as an object. Nodes that may be `undefined` are left out at runtime when
+ * they are, and their values are typed `| undefined`.
+ */
+export type EntriesOf<Fields> = ReadonlyArray<
+  {
+    [K in keyof Fields]-?: readonly [
+      K,
+      undefined extends Fields[K]
+        ? Exclude<Fields[K], undefined> & OptionalNode
+        : Exclude<Fields[K], undefined>,
+    ]
+  }[keyof Fields]
+>
+
+/**
+ * Creates a form schema. Nodes can be fields, nested forms or lists, given as an object or as a list of
+ * `[name, node]` entries.
  *
  * @example
+ * const schema = createForm({
+ *   email: createField<string>([requiredValidator]),
+ *   address: createForm({ street: createField<string>() }),
+ * })
+ *
+ * // Entries keep full control over the order, and allow names that aren't strings.
  * const schema = createForm([
  *   ['email', createField<string>([requiredValidator])],
  *   ['address', createForm([['street', createField<string>()]])],
@@ -65,9 +87,17 @@ export function createField(validators: any = [], metadata?: any): FieldSchema {
 export function createForm<const Fields extends ReadonlyArray<FieldEntry>>(
   fields: Fields,
 ): FormSchema<Fields>
-export function createForm(fields: ReadonlyArray<ReadonlyArray<any>>): FormSchema<any>
+export function createForm<const Fields extends Record<string, SchemaNode | undefined>>(
+  fields: Fields,
+): FormSchema<Extract<EntriesOf<Fields>, ReadonlyArray<FieldEntry>>>
+export function createForm(
+  fields: ReadonlyArray<ReadonlyArray<any>> | Record<string, any>,
+): FormSchema<any>
 export function createForm(fields: any): FormSchema<any> {
-  const fieldsByName = fields.reduce(
+  const entries = Array.isArray(fields)
+    ? fields
+    : Object.entries(fields).filter(([, node]) => node !== undefined)
+  const fieldsByName = entries.reduce(
     (result: any, [name, field]: [any, any]) => ({ ...result, [name]: field }),
     {},
   )
@@ -75,7 +105,7 @@ export function createForm(fields: any): FormSchema<any> {
   return {
     '#type': FORM_TYPE,
     '#fieldsByName': fieldsByName,
-    '#fields': fields,
+    '#fields': entries,
   }
 }
 

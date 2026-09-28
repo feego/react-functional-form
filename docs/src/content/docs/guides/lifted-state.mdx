@@ -18,13 +18,13 @@ All form state is plain React state held in "state hooks": `[state, setState]` p
 
 By default `useController` creates each one itself. Pass any of them to own that piece of state.
 
-## Reading values before the controller: `useState`
+## Reading values before the controller: `useFormState`
 
 Sometimes the schema depends on the values, for example one schema per selected type, or items added
-dynamically. `useState` creates the state hooks up front, so you can read the values first:
+dynamically. `useFormState` creates the state hooks up front, so you can read the values first:
 
 ```tsx
-import { useController, useState as useFormState } from 'react-functional-form'
+import { useController, useFormState } from 'react-functional-form'
 
 function StepForm({ initialValues }) {
   const formState = useFormState({ schema: buildSchema(initialValues), initialValues })
@@ -40,8 +40,10 @@ function StepForm({ initialValues }) {
 ## Lifting state to a parent
 
 ```tsx
+import { useState } from 'react'
+
 function Parent() {
-  const valuesStateHook = useState({ name: 'Ada' })
+  const valuesStateHook = useState({ name: 'Ada' }) // React's useState
   const [values] = valuesStateHook
 
   return (

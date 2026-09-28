@@ -271,21 +271,21 @@ describe('imperative API', () => {
     expect(result.current.address.validationResult[1].city).toEqual([false, 'Unknown'])
   })
 
-  it('triggers validation for a field or the whole form', () => {
+  it('triggers validation for a field or the whole form', async () => {
     const { result } = renderHook(() => useForm())
 
     let triggered: any
     act(() => {
       triggered = result.current.controller.trigger('name')
     })
-    expect(triggered[1].name).toEqual([false, 'Required'])
-    expect(triggered[1].address).toEqual([true, { city: [true] }])
+    expect((await triggered)[1].name).toEqual([false, 'Required'])
+    expect((await triggered)[1].address).toEqual([true, { city: [true] }])
     expect(result.current.getPropsForField('name').error).toBe('Required')
 
     act(() => {
       triggered = result.current.controller.trigger()
     })
-    expect(triggered[1].address).toEqual([false, { city: [false, 'Required'] }])
+    expect((await triggered)[1].address).toEqual([false, { city: [false, 'Required'] }])
   })
 
   it('sets field values and reads field state', () => {

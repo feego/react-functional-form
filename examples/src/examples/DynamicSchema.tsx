@@ -1,6 +1,6 @@
 /**
  * A schema that depends on the values: the contact field changes with the chosen contact method.
- * `useState` creates the form state before the controller, so the schema can be built from it.
+ * `useFormState` creates the form state before the controller, so the schema can be built from it.
  */
 import { useMemo } from 'react'
 import {
@@ -9,7 +9,7 @@ import {
   requiredValidator,
   useController,
   useGetPropsForField,
-  useState as useFormState,
+  useFormState,
 } from 'react-functional-form'
 import { Button, Debug, Select, TextInput } from '../components/ui'
 import { notify } from '../components/fakeApi'
@@ -17,14 +17,13 @@ import { notify } from '../components/fakeApi'
 type ContactMethod = 'email' | 'phone'
 
 const buildSchema = (contactMethod?: ContactMethod) =>
-  createForm([
-    ['name', createField<string>([requiredValidator])],
-    ['contactMethod', createField<ContactMethod>([requiredValidator])],
-    // `as const` keeps both alternatives typed. Only one exists at a time, hence `| undefined`.
-    contactMethod === 'phone'
-      ? (['phone', createField<string | undefined>([requiredValidator])] as const)
-      : (['email', createField<string | undefined>([requiredValidator])] as const),
-  ])
+  createForm({
+    name: createField<string>([requiredValidator]),
+    contactMethod: createField<ContactMethod>([requiredValidator]),
+    // Fields that are `undefined` are left out. Their values are typed `string | undefined`.
+    email: contactMethod === 'phone' ? undefined : createField<string>([requiredValidator]),
+    phone: contactMethod === 'phone' ? createField<string>([requiredValidator]) : undefined,
+  })
 
 export default function DynamicSchema() {
   const initialValues = { contactMethod: 'email' as ContactMethod }

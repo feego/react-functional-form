@@ -5,10 +5,7 @@ import { createField, createForm, useController, useGetPropsForField } from 'rea
 import { Button, TextInput } from '../components/ui'
 import { api } from '../components/fakeApi'
 
-const schema = createForm([
-  ['displayName', createField<string>()],
-  ['bio', createField<string>()],
-])
+const schema = createForm({ displayName: createField<string>(), bio: createField<string>() })
 
 export default function EditProfile() {
   const form = useController({

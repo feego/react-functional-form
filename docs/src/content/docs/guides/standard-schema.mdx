@@ -16,10 +16,10 @@ Pass a schema directly to `createField`. The field's value type is inferred from
 ```ts
 import { z } from 'zod'
 
-const schema = createForm([
-  ['email', createField(z.string().email('Enter a valid email'))], // value: string
-  ['age', createField(z.coerce.number().min(18, 'Adults only'))], // value: unknown (input type)
-])
+const schema = createForm({
+  email: createField(z.string().email('Enter a valid email')), // value: string
+  age: createField(z.coerce.number().min(18, 'Adults only')), // value: unknown (input type)
+})
 ```
 
 ```ts
@@ -63,7 +63,7 @@ How issues are mapped:
 - Each issue goes to the field at its `path`, including nested forms (`['address', 'city']`) and list items
   (`['members', 0, 'email']`).
 - Issues whose path ends at a form or list, or has no path at all, go to that form or list: the third
-  element of its validation result, e.g. `members.validationResult[2]`.
+  element of its validation result, also available as the list controller's `error`.
 - As with other validation, only touched fields get errors.
 - Field-level validators keep running. Pass `{ validate: myValidate }` to combine the schema with a
   different base validation.

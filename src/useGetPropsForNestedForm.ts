@@ -15,9 +15,9 @@ const applyReducer = (reducer: any, previous: any) =>
  * @param props - The parent form controller (the `useController` return value).
  * @returns Function that receives the nested form name and returns the props for its `useController` hook.
  */
-export function useGetPropsForNestedForm<S extends SchemaNode>(
-  props: Controller<S>,
-): <K extends NestedFormName<S>>(name: K) => ControllerProps<ChildSchema<S, K>>
+export function useGetPropsForNestedForm<S extends SchemaNode, E = any>(
+  props: Controller<S, E>,
+): <K extends NestedFormName<S>>(name: K) => ControllerProps<ChildSchema<S, K>, E>
 export function useGetPropsForNestedForm(props: any): (name: any) => any
 export function useGetPropsForNestedForm({
   schema,
@@ -30,6 +30,7 @@ export function useGetPropsForNestedForm({
   isValidating,
   submitState,
   mode,
+  mapError,
   shouldFocusError,
   fieldRegistry,
   path = [],
@@ -104,6 +105,7 @@ export function useGetPropsForNestedForm({
         validationResult: validationResult?.[1]?.[name],
         isValidating,
         mode,
+        mapError,
         shouldFocusError,
         fieldRegistry,
         path: [...path, name],
@@ -127,6 +129,7 @@ export function useGetPropsForNestedForm({
       validationResult,
       isValidating,
       mode,
+      mapError,
       shouldFocusError,
       fieldRegistry,
       onSubmit,

@@ -12,7 +12,7 @@ const isAvailable = createValidator(async (username: string) =>
   (await api.isUsernameTaken(username)) ? 'That username is taken' : undefined,
 )
 
-const schema = createForm([['username', createField([requiredValidator, isAvailable])]])
+const schema = createForm({ username: createField([requiredValidator, isAvailable]) })
 ```
 
 Validation only becomes async when a validator actually returns a promise. Sync forms stay fully

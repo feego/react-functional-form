@@ -12,6 +12,7 @@ import {
   useController,
   useFieldArray,
   useGetPropsForField,
+  useGetPropsForInput,
   useGetPropsForNestedForm,
   type Controller,
   type ControllerProps,
@@ -132,7 +133,7 @@ describe('controller types', () => {
 
     expectTypeOf(props.name).toEqualTypeOf<'name'>()
     expectTypeOf(props.value).toEqualTypeOf<string | undefined>()
-    expectTypeOf(props.error).toEqualTypeOf<{ message: string }>()
+    expectTypeOf(props.error).toEqualTypeOf<{ message: string } | undefined>()
   })
 
   it('types nested forms and list items', () => {
@@ -178,5 +179,67 @@ describe('validator typing', () => {
       value !== values.password ? 'Passwords must match' : undefined,
     )
     createField<string>([minWords(3), matchesPassword])
+  })
+})
+
+describe('1.0 API typing', () => {
+  it('infers values from object syntax, with optional entries', () => {
+    const buildSchema = (usePhone: boolean) =>
+      createForm({
+        name: createField<string>(),
+        address: createForm({ city: createField<string>() }),
+        phone: usePhone ? createField<string>() : undefined,
+      })
+    expectTypeOf<ValuesOf<ReturnType<typeof buildSchema>>>().toEqualTypeOf<{
+      name: string
+      address: { city: string }
+      phone: string | undefined
+    }>()
+  })
+
+  it('types errors from the controller mapError', () => {
+    const schema = createForm({ name: createField<string>() })
+    const form = useController({ schema, mapError: (code: string) => ({ message: code }) })
+    expectTypeOf(form.error).toEqualTypeOf<{ message: string } | undefined>()
+    expectTypeOf(useGetPropsForField(form)('name').error).toEqualTypeOf<
+      { message: string } | undefined
+    >()
+    const address = useController(
+      useGetPropsForNestedForm(
+        useController({
+          schema: createForm({ address: createForm({ city: createField() }) }),
+          mapError: () => 1,
+        }),
+      )('address'),
+    )
+    expectTypeOf(address.error).toEqualTypeOf<number | undefined>()
+  })
+
+  it('types onSubmit and trigger as promises', () => {
+    const form = useController({ schema: createForm({ name: createField<string>() }) })
+    expectTypeOf(form.onSubmit).returns.resolves.toEqualTypeOf<typeof form.validationResult>()
+    expectTypeOf(form.trigger).returns.resolves.toEqualTypeOf<typeof form.validationResult>()
+  })
+
+  it('types getPropsForItem by item schema', () => {
+    const schema = createForm({
+      tags: createList(createField<string>()),
+      members: createList(createForm({ name: createField<string>() })),
+    })
+    const form = useController({ schema })
+    const tags = useFieldArray(useController(useGetPropsForNestedForm(form)('tags')))
+    const members = useFieldArray(useController(useGetPropsForNestedForm(form)('members')))
+    expectTypeOf(tags.getPropsForItem(0).value).toEqualTypeOf<string | undefined>()
+    expectTypeOf(useController(members.getPropsForItem(0)).values).toEqualTypeOf<{ name: string }>()
+  })
+
+  it('only accepts field names in useGetPropsForInput', () => {
+    const form = useController({
+      schema: createForm({ name: createField<string>(), address: createForm({}) }),
+    })
+    const getPropsForInput = useGetPropsForInput(form)
+    expectTypeOf(getPropsForInput('name').name).toEqualTypeOf<string>()
+    // @ts-expect-error nested forms aren't inputs
+    getPropsForInput('address')
   })
 })

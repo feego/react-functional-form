@@ -72,7 +72,7 @@ export const examples: Example[] = [
   {
     id: 'native-inputs',
     title: 'Native inputs & focus on error',
-    description: 'Spread field props on plain inputs, selects, textareas and checkboxes.',
+    description: 'useGetPropsForInput on plain inputs, selects, radios, textareas and checkboxes.',
     file: 'NativeInputs.tsx',
     Component: NativeInputs,
   },

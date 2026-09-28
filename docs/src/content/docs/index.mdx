@@ -39,11 +39,11 @@ import QuickStartDemo from '../../components/demos/QuickStartDemo'
 <QuickStartDemo client:load />
 
 ```tsx
-const schema = createForm([
-  ['email', createField<string>([requiredValidator])],
-  ['password', createField<string>([requiredValidator, createMinLengthValidator(8)])],
-  ['confirmPassword', createField<string>([createMatchesFieldValidator('password')])],
-])
+const schema = createForm({
+  email: createField<string>([requiredValidator]),
+  password: createField<string>([requiredValidator, createMinLengthValidator(8)]),
+  confirmPassword: createField<string>([createMatchesFieldValidator('password')]),
+})
 
 function SignUpForm() {
   const form = useController({ schema, onSubmit: (values) => api.signUp(values) })

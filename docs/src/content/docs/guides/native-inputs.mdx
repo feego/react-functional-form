@@ -7,29 +7,39 @@ import NativeInputsDemo from '../../../components/demos/NativeInputsDemo'
 
 ## Native inputs
 
-The `onChange` from `getPropsForField` accepts either a value or a DOM change event. Events are unwrapped:
+`useGetPropsForInput` builds props to spread directly on `<input>`, `<select>` and `<textarea>`:
 
-| Input                         | Value stored                    |
+```tsx
+const getPropsForInput = useGetPropsForInput(form)
+
+<input {...getPropsForInput('name')} />
+<textarea {...getPropsForInput('message')} />
+<select {...getPropsForInput('country')}>
+  <option value="pt">Portugal</option>
+</select>
+<input {...getPropsForInput('newsletter', { type: 'checkbox' })} />
+<input {...getPropsForInput('plan', { type: 'radio', value: 'free' })} />
+<input {...getPropsForInput('plan', { type: 'radio', value: 'pro' })} />
+```
+
+Compared with field props, input props:
+
+- never have an `undefined` value (`''` instead), so inputs stay controlled;
+- bind `checked` for checkboxes (a boolean value) and radio buttons (the value equals `value`);
+- set `aria-invalid` when the field has an error, and leave `error` out, since it isn't a DOM
+  attribute. Read the error with `form.getFieldState(name).error`.
+
+The `onChange` handler reads the value from the change event:
+
+| Element                       | Value stored                    |
 | ----------------------------- | ------------------------------- |
 | text, textarea, select, radio | `event.target.value`            |
 | `type="checkbox"`             | `event.target.checked`          |
 | `type="file"`                 | `event.target.files`            |
 | `<select multiple>`           | array of selected option values |
 
-So you can spread the props on native elements. Leave `error` out, because it isn't a DOM attribute, and
-default the value so the input stays controlled:
-
-```tsx
-const { error, ...nameProps } = getPropsForField('name')
-
-<input {...nameProps} value={nameProps.value ?? ''} />
-{error && <span role="alert">{error}</span>}
-
-const { error: _, value: accepted, ...termsProps } = getPropsForField('acceptTerms')
-<input type="checkbox" checked={Boolean(accepted)} {...termsProps} />
-```
-
-Usually you'll wrap this in small components (`TextInput`, `Checkbox`) once.
+The `onChange` from `getPropsForField` handles events the same way, so custom components can pass
+either a value or an event.
 
 ## Field state
 
@@ -41,7 +51,7 @@ const { value, error, invalid, touched, visited, dirty } = form.getFieldState('e
 
 ## Focusing the first invalid field
 
-Enable `shouldFocusError` and field props will include a `ref`. When a submission fails, the first invalid
+Enable `shouldFocusError` and field and input props will include a `ref`. When a submission fails, the first invalid
 field (in schema order, including nested forms and lists) gets focused:
 
 ```tsx

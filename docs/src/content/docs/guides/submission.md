@@ -34,9 +34,17 @@ Extra arguments are passed through, which is handy for variants of the same subm
 
 ## Return value
 
-`form.onSubmit` returns the validation result. If validation or your `onSubmit` handler is async, it
-returns a promise instead. That promise resolves after `onSubmit` finishes and rejects if `onSubmit`
-throws.
+`form.onSubmit` always returns a promise of the validation result. The promise resolves after your
+`onSubmit` handler finishes and rejects if the handler throws or rejects:
+
+```ts
+const result = await form.onSubmit()
+if (!result[0]) scrollToTop()
+```
+
+The work itself happens synchronously when validation and the handler are sync: fields are touched and
+`onSubmit` is called before `form.onSubmit()` returns. Only the result is wrapped in a promise, so callers
+handle sync and async forms the same way.
 
 ## Submit state
 

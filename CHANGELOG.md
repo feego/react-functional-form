@@ -9,6 +9,8 @@
   `useGetPropsForNestedForm`, validator chains) is unchanged.
 
   ### New features
+  - **Object syntax for forms:** `createForm({ email: createField<string>(), address: addressSchema })`,
+    alongside the `[name, node]` entries. Fields set to `undefined` are left out and typed `| undefined`.
   - **TypeScript types inferred from schemas:** values, initial values, `onSubmit`, field props, nested
     forms and list items are typed from `createField<T>()` or a Standard Schema. Untyped code keeps
     compiling with loose types.
@@ -22,21 +24,35 @@
   - **Dirty tracking and reset:** `isDirty`, `dirty` and `reset(values?)`.
   - **Imperative API:** `setErrors`, `clearErrors`, `trigger`, `setFieldValue` and `getFieldState`.
   - **Validation modes:** `mode: 'onBlur' | 'onChange' | 'onSubmit'`.
-  - **Native inputs:** field `onChange` accepts DOM change events (text, checkbox, file, multi-select).
+  - **Native inputs:** `useGetPropsForInput` builds DOM-ready props (`value` never `undefined`, `checked` for
+    checkboxes and radios, `aria-invalid`), and field `onChange` accepts DOM change events.
+  - **Error mapping for the whole form:** a `mapError` prop on `useController` maps errors for field props,
+    `getFieldState`, the form's own `error`, and every nested form. Its return type types the errors.
+  - **`error` on controllers:** the form's or list's own error (e.g. from a list validator), instead of
+    `validationResult[2]`.
+  - **`getPropsForItem`** from `useFieldArray`: controller props for lists of forms, field props for lists of
+    fields.
   - **Focus on error:** `shouldFocusError` focuses the first invalid field after a failed submission.
   - **Context:** `FormProvider` and `useFormContext`.
   - **Validators:** `createMinLengthValidator`, `createMaxLengthValidator`, `createMinValidator`,
     `createMaxValidator`, `createMatchesFieldValidator`, `createValidator`, `optional`, and
     `createStandardSchemaValidator`.
   - `useDirtyValues` is now exported.
+  - `useState` is renamed to `useFormState`, so it doesn't clash with React's `useState`. `useState` remains
+    as a deprecated alias.
 
   ### Breaking changes
   - `onSubmit` now calls `preventDefault()` when given a submit event, and clears errors set with
     `setErrors`.
-  - When the submit handler (or a validator) is async, `onSubmit` returns a promise of the validation result
-    instead of the result itself. The promise rejects if the submit handler throws or rejects.
-  - `validate` and `getValidationResult` are typed as possibly returning a promise (they only do when a
-    validator is async).
+  - `onSubmit` and `trigger` always return a promise of the validation result instead of the result itself.
+    The work still happens synchronously when validation and the handler are sync. The promise rejects if
+    the submit handler throws or rejects.
+  - The `mapError` argument of `useGetPropsForField` is only called for fields that have an error (it used
+    to also be called with `undefined`).
+  - Internal helpers are no longer exported: `getInitialValues`, `getInitialTouched`, `getInitialVisited`,
+    `getAllFieldsTouched`, `getValidationResult`, `mergeAdditionalErrors` and `validateField`. Use the
+    controller methods (`reset`, `trigger`, `setErrors`, `getFieldState`) and `validate` instead.
+  - `validate` is typed as possibly returning a promise (it only does when a validator is async).
   - The package is now ESM-first with an `exports` map (`dist/index.js` and `dist/index.cjs`). Deep imports
     of the old `dist` files no longer work; import from `react-functional-form`.
   - The React peer dependency is now `>=16.8` (hooks), and TypeScript 5.4+ is required for the types.
