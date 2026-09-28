@@ -1,0 +1,133 @@
+/* Styles for the example components. The variables are overridden by the docs site theme. */
+:root {
+  --rff-border: #d4d4d8;
+  --rff-surface: #fafafa;
+  --rff-input-border: #a1a1aa;
+  --rff-input-bg: #fff;
+  --rff-text: #18181b;
+  --rff-muted: #71717a;
+  --rff-accent: #4f46e5;
+  --rff-accent-text: #4338ca;
+  --rff-on-accent: #fff;
+  --rff-error: #dc2626;
+  --rff-text-sm: 0.875rem;
+  --rff-text-xs: 0.75rem;
+}
+
+.rff-demo {
+  border: 1px solid var(--rff-border);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  margin-block: 1.5rem;
+  background: var(--rff-surface);
+}
+
+.rff-demo form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.rff-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 1;
+}
+
+.rff-label {
+  font-size: var(--rff-text-sm);
+  font-weight: 600;
+}
+
+.rff-input {
+  font: inherit;
+  padding: 0.5rem 0.7rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--rff-input-border);
+  background: var(--rff-input-bg);
+  color: var(--rff-text);
+}
+
+.rff-input:focus {
+  outline: 2px solid var(--rff-accent);
+  outline-offset: 1px;
+}
+
+.rff-input[aria-invalid='true'] {
+  border-color: var(--rff-error);
+}
+
+.rff-error {
+  color: var(--rff-error);
+  font-size: var(--rff-text-sm);
+  margin: 0;
+}
+
+.rff-hint {
+  color: var(--rff-muted);
+  font-size: var(--rff-text-sm);
+}
+
+.rff-button {
+  font: inherit;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--rff-accent);
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.rff-button--primary {
+  background: var(--rff-accent);
+  color: var(--rff-on-accent);
+}
+
+.rff-button--secondary {
+  background: transparent;
+  color: var(--rff-accent-text);
+}
+
+.rff-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.rff-fieldset {
+  border: 1px solid var(--rff-border);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.rff-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.rff-row-actions,
+.rff-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+  align-self: flex-end;
+}
+
+.rff-actions {
+  align-self: flex-start;
+}
+
+.rff-debug {
+  margin-top: 1rem;
+  font-size: var(--rff-text-xs);
+}
+
+.rff-debug pre {
+  max-height: 20rem;
+  overflow: auto;
+}

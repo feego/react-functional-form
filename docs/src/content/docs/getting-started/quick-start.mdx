@@ -1,0 +1,95 @@
+---
+title: Quick start
+description: Build your first form.
+---
+
+import QuickStartDemo from '../../../components/demos/QuickStartDemo'
+
+## 1. Describe the form
+
+A schema is a list of `[name, node]` entries. Each field gets a list of validators that run in order.
+
+```ts
+import {
+  createField,
+  createForm,
+  createMatchesFieldValidator,
+  createMinLengthValidator,
+  requiredValidator,
+} from 'react-functional-form'
+
+const schema = createForm([
+  ['email', createField<string>([requiredValidator])],
+  ['password', createField<string>([requiredValidator, createMinLengthValidator(8)])],
+  ['confirmPassword', createField<string>([createMatchesFieldValidator('password')])],
+])
+```
+
+## 2. Create the controller
+
+`useController` holds the form state and validates it. `onSubmit` is only called with valid values.
+
+```tsx
+import { useController, useGetPropsForField } from 'react-functional-form'
+
+function SignUpForm() {
+  const form = useController({
+    schema,
+    onSubmit: async (values) => {
+      await api.signUp(values) // values: { email: string; password: string; confirmPassword: string }
+    },
+  })
+  const getPropsForField = useGetPropsForField(form)
+  // …
+}
+```
+
+## 3. Connect the inputs
+
+`getPropsForField(name)` returns `name`, `value`, `error`, `onChange`, `onFocus` and `onBlur`. Spread
+them on your input components:
+
+```tsx
+function TextInput({ label, error, value, onChange, ...props }) {
+  return (
+    <label>
+      {label}
+      <input {...props} value={value ?? ''} onChange={(event) => onChange(event.target.value)} />
+      {error && <span role="alert">{error}</span>}
+    </label>
+  )
+}
+
+return (
+  <form onSubmit={form.onSubmit} noValidate>
+    <TextInput label="Email" {...getPropsForField('email')} />
+    <TextInput label="Password" type="password" {...getPropsForField('password')} />
+    <TextInput label="Confirm password" type="password" {...getPropsForField('confirmPassword')} />
+    <button disabled={form.submitState.isSubmitting}>Sign up</button>
+  </form>
+)
+```
+
+`form.onSubmit` accepts the submit event and calls `preventDefault` for you. Errors show once a field is
+blurred ("touched"). Submitting touches every field.
+
+## 4. Show friendly messages
+
+Validators return error **codes** such as `'Required'` and `'TooShort'`. Map them to messages with the
+second argument of `useGetPropsForField`:
+
+```ts
+const messages = {
+  [Errors.Required]: 'This field is required',
+  [Errors.TooShort]: 'Use at least 8 characters',
+  [Errors.Mismatch]: "Passwords don't match",
+}
+const getPropsForField = useGetPropsForField(form, (error) => error && messages[error])
+```
+
+## Result
+
+<QuickStartDemo client:load />
+
+Next, read about [schemas](/react-functional-form/guides/schemas/) and
+[validation](/react-functional-form/guides/validation/).

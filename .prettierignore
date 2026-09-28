@@ -1,0 +1,6 @@
+dist
+coverage
+pnpm-lock.yaml
+docs/.astro
+docs/dist
+examples/dist

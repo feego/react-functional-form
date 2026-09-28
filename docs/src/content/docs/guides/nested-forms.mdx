@@ -1,0 +1,71 @@
+---
+title: Nested forms
+description: Compose forms out of reusable sub-forms.
+---
+
+import NestedFormsDemo from '../../../components/demos/NestedFormsDemo'
+
+A nested form is a form node inside another form. What makes it useful is that the sub-form component is
+a complete form: it calls `useController` with the props its parent gives it.
+
+```tsx
+const addressSchema = createForm([
+  ['street', createField<string>([requiredValidator])],
+  ['city', createField<string>([requiredValidator])],
+])
+
+function AddressForm({ propsForForm }: { propsForForm: ControllerProps<typeof addressSchema> }) {
+  const form = useController(propsForForm)
+  const getPropsForField = useGetPropsForField(form)
+
+  return (
+    <fieldset>
+      <TextInput label="Street" {...getPropsForField('street')} />
+      <TextInput label="City" {...getPropsForField('city')} />
+    </fieldset>
+  )
+}
+```
+
+The parent includes the schema and hands down props with `useGetPropsForNestedForm`:
+
+```tsx
+const schema = createForm([
+  ['billing', addressSchema],
+  ['shipping', addressSchema],
+])
+
+function CheckoutForm() {
+  const form = useController({ schema, onSubmit })
+  const getPropsForNestedForm = useGetPropsForNestedForm(form)
+
+  return (
+    <form onSubmit={form.onSubmit}>
+      <AddressForm propsForForm={getPropsForNestedForm('billing')} />
+      <AddressForm propsForForm={getPropsForNestedForm('shipping')} />
+    </form>
+  )
+}
+```
+
+<NestedFormsDemo client:load />
+
+## How it works
+
+- The nested form's state (values, touched, visited, errors, submit state) **lives in the parent**. The
+  nested controller receives it through state hooks flagged as belonging to a parent.
+- The parent validates everything and passes the nested form its slice of the validation result.
+- Events bubble: a change in `billing.city` calls the parent's `onChange` with
+  `{ fieldName: 'billing', nestedFormEvent: { fieldName: 'city', nextValue } }`.
+- Calling `onSubmit` inside a nested form submits the root form.
+- The mode, `shouldFocusError`, default values (for dirty tracking) and `isValidating` flow down.
+- `setErrors`, `reset`, `trigger` and `setFieldValue` on a nested controller work on its own slice.
+
+Nested forms can be nested again, and lists are nested forms too. See
+[field arrays](/react-functional-form/guides/field-arrays/).
+
+## Cross-form validation
+
+Validators only see their own form's values (`metadata.values`). That keeps sub-forms reusable. For rules
+that span levels, use [form-level validation](/react-functional-form/guides/standard-schema/#form-level-validation),
+or `map` the reusable schema to add context-specific validators where it's used.

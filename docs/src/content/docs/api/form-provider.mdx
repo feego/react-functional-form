@@ -1,0 +1,30 @@
+---
+title: FormProvider
+description: Share a controller through context.
+---
+
+import FormContextDemo from '../../../components/demos/FormContextDemo'
+
+```tsx
+import { FormProvider, useFormContext } from 'react-functional-form'
+
+function Form() {
+  const form = useController({ schema })
+  return (
+    <FormProvider form={form}>
+      <DeeplyNestedField />
+    </FormProvider>
+  )
+}
+
+function DeeplyNestedField() {
+  const form = useFormContext<typeof schema>()
+  const getPropsForField = useGetPropsForField(form)
+  return <TextInput {...getPropsForField('email')} />
+}
+```
+
+`useFormContext` throws when there's no provider above it. Nested controllers can have their own
+providers.
+
+<FormContextDemo client:load />

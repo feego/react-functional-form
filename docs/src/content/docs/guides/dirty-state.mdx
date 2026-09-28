@@ -1,0 +1,48 @@
+---
+title: Dirty state & reset
+description: Know what changed and go back to the defaults.
+---
+
+import DirtyStateDemo from '../../../components/demos/DirtyStateDemo'
+
+The controller compares the current values with the **default values** (the initial values, or the values
+it first saw):
+
+- `form.isDirty`: whether anything changed.
+- `form.dirty`: a tree mirroring the values, with `true` for changed fields (`{ name: false, address: { city: true } }`).
+- `form.getFieldState(name).dirty`: for one field or nested form.
+
+Comparisons are structural, so changing a value and changing it back makes the form clean again. For lists,
+adding or removing items also makes them dirty.
+
+## Reset
+
+```ts
+form.reset() // back to the default values
+form.reset(savedValues) // to new values, which also become the new defaults
+```
+
+`reset` clears touched, visited, manual errors and submit state. A common pattern after saving:
+
+```ts
+useController({
+  schema,
+  initialValues,
+  onSubmit: async (values) => {
+    await api.save(values)
+    form.reset(values)
+  },
+})
+```
+
+<DirtyStateDemo client:load />
+
+## Event-based dirty tracking
+
+`useDirtyValues` is an alternative that records which fields the user changed, from change events,
+regardless of whether the value ended up equal to the default:
+
+```ts
+const [[dirtyFields, setDirtyFields], onChange] = useDirtyValues()
+const form = useController({ schema, onChange })
+```

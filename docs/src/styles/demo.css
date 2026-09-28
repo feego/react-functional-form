@@ -1,0 +1,15 @@
+/* Maps the example components' variables onto the Starlight theme (light and dark). */
+:root {
+  --rff-border: var(--sl-color-gray-5);
+  --rff-surface: var(--sl-color-bg-nav);
+  --rff-input-border: var(--sl-color-gray-4);
+  --rff-input-bg: var(--sl-color-bg);
+  --rff-text: var(--sl-color-white);
+  --rff-muted: var(--sl-color-gray-3);
+  --rff-accent: var(--sl-color-accent);
+  --rff-accent-text: var(--sl-color-accent-high);
+  --rff-on-accent: var(--sl-color-black);
+  --rff-error: var(--sl-color-red-high);
+  --rff-text-sm: var(--sl-text-sm);
+  --rff-text-xs: var(--sl-text-xs);
+}

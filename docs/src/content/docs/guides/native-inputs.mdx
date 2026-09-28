@@ -1,0 +1,59 @@
+---
+title: Native inputs & focus
+description: Use plain DOM inputs and focus the first invalid field.
+---
+
+import NativeInputsDemo from '../../../components/demos/NativeInputsDemo'
+
+## Native inputs
+
+The `onChange` from `getPropsForField` accepts either a value or a DOM change event. Events are unwrapped:
+
+| Input                         | Value stored                    |
+| ----------------------------- | ------------------------------- |
+| text, textarea, select, radio | `event.target.value`            |
+| `type="checkbox"`             | `event.target.checked`          |
+| `type="file"`                 | `event.target.files`            |
+| `<select multiple>`           | array of selected option values |
+
+So you can spread the props on native elements. Leave `error` out, because it isn't a DOM attribute, and
+default the value so the input stays controlled:
+
+```tsx
+const { error, ...nameProps } = getPropsForField('name')
+
+<input {...nameProps} value={nameProps.value ?? ''} />
+{error && <span role="alert">{error}</span>}
+
+const { error: _, value: accepted, ...termsProps } = getPropsForField('acceptTerms')
+<input type="checkbox" checked={Boolean(accepted)} {...termsProps} />
+```
+
+Usually you'll wrap this in small components (`TextInput`, `Checkbox`) once.
+
+## Field state
+
+`form.getFieldState(name)` returns everything about a field in one object:
+
+```ts
+const { value, error, invalid, touched, visited, dirty } = form.getFieldState('email')
+```
+
+## Focusing the first invalid field
+
+Enable `shouldFocusError` and field props will include a `ref`. When a submission fails, the first invalid
+field (in schema order, including nested forms and lists) gets focused:
+
+```tsx
+const form = useController({ schema, shouldFocusError: true })
+```
+
+Your input components need to forward the `ref` to a focusable element (React 19 passes `ref` as a prop;
+on older versions use `forwardRef`). The option is off by default, so components that can't take a ref
+don't get one.
+
+## Example
+
+Submit the empty form: the first invalid field gets focused.
+
+<NativeInputsDemo client:load />

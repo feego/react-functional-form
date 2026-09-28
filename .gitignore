@@ -1,10 +1,9 @@
 *.log
 .DS_Store
 node_modules
-.cache
 dist
+coverage
 .npmrc
-.yarnrc
-.npm
 .vscode
-/storybook-static/
+docs/.astro
+.gstack

@@ -1,0 +1,37 @@
+---
+title: Async validation
+description: Validators that call a server.
+---
+
+import AsyncValidationDemo from '../../../components/demos/AsyncValidationDemo'
+
+Any validator can return a promise. `createValidator` makes that easy:
+
+```ts
+const isAvailable = createValidator(async (username: string) =>
+  (await api.isUsernameTaken(username)) ? 'That username is taken' : undefined,
+)
+
+const schema = createForm([['username', createField([requiredValidator, isAvailable])]])
+```
+
+Validation only becomes async when a validator actually returns a promise. Sync forms stay fully
+synchronous.
+
+While async validation runs:
+
+- `form.isValidating` is `true`.
+- `form.validationResult` keeps the **last resolved** result, so errors don't flicker.
+- Results from outdated runs are discarded.
+
+On submit, the controller waits for async validation before calling `onSubmit`, and `form.onSubmit()`
+returns a promise.
+
+<AsyncValidationDemo client:load />
+
+## Tips
+
+- Async validators rerun when values, touched state or errors change. If your schema is rebuilt on every
+  render, wrap it in `useMemo` so a new schema object doesn't count as a change.
+- Debounce inside the validator if you validate on every keystroke (`mode: 'onChange'`).
+- Put cheap sync validators first. Validators run in order and the chain awaits each async one.

@@ -1,0 +1,76 @@
+---
+title: Zod, Valibot & Standard Schema
+description: Validate with Zod, Valibot, ArkType or any Standard Schema library.
+---
+
+import StandardSchemaDemo from '../../../components/demos/StandardSchemaDemo'
+
+react-functional-form supports [Standard Schema](https://standardschema.dev), the shared interface
+implemented by Zod, Valibot, ArkType, Effect Schema and others. There's no adapter package to install and
+no dependency on any of them.
+
+## Field-level schemas
+
+Pass a schema directly to `createField`. The field's value type is inferred from it:
+
+```ts
+import { z } from 'zod'
+
+const schema = createForm([
+  ['email', createField(z.string().email('Enter a valid email'))], // value: string
+  ['age', createField(z.coerce.number().min(18, 'Adults only'))], // value: unknown (input type)
+])
+```
+
+```ts
+import * as v from 'valibot'
+createField(v.pipe(v.string(), v.email('Enter a valid email')))
+
+import { type } from 'arktype'
+createField(type('string.email'))
+```
+
+To mix a schema with other validators, use `createStandardSchemaValidator`:
+
+```ts
+createField([requiredValidator, createStandardSchemaValidator(z.string().email())])
+```
+
+By default the error is the first issue's `message`. Pass a mapper as the second argument to change it:
+
+```ts
+createStandardSchemaValidator(schema, (issues) => issues.map((issue) => issue.message).join(', '))
+```
+
+## Form-level validation
+
+Some rules involve several fields, like password confirmation or "end date after start date". Validate
+the whole values object with `createStandardSchemaValidate` and pass it as `validate`:
+
+```ts
+const valuesSchema = z
+  .object({ password: z.string().min(8), confirmPassword: z.string() })
+  .refine((values) => values.password === values.confirmPassword, {
+    path: ['confirmPassword'],
+    message: "Passwords don't match",
+  })
+
+const form = useController({ schema, validate: createStandardSchemaValidate(valuesSchema) })
+```
+
+How issues are mapped:
+
+- Each issue goes to the field at its `path`, including nested forms (`['address', 'city']`) and list items
+  (`['members', 0, 'email']`).
+- Issues whose path ends at a form or list, or has no path at all, go to that form or list: the third
+  element of its validation result, e.g. `members.validationResult[2]`.
+- As with other validation, only touched fields get errors.
+- Field-level validators keep running. Pass `{ validate: myValidate }` to combine the schema with a
+  different base validation.
+
+<StandardSchemaDemo client:load />
+
+## Async schemas
+
+Schemas with async refinements work too. They're treated like any other
+[async validator](/react-functional-form/guides/async-validation/).

@@ -1,0 +1,49 @@
+---
+title: Errors from the server
+description: Show errors that come from outside the form's validators.
+---
+
+import ServerErrorsDemo from '../../../components/demos/ServerErrorsDemo'
+
+There are two ways to show errors that don't come from validators.
+
+## `setErrors`: imperative
+
+Set errors shaped like the values, for example after a failed request:
+
+```ts
+const form = useController({
+  schema,
+  onSubmit: async (values) => {
+    try {
+      await api.register(values)
+    } catch (error) {
+      form.setErrors({ email: 'This email is already registered', address: { zip: 'Unknown zip' } })
+    }
+  },
+})
+```
+
+- An error is cleared when its field changes. Every manual error is cleared on the next submit.
+- `form.clearErrors()` clears all of them, and `form.clearErrors('email')` clears one.
+- `form.errors` holds the current manual errors.
+- Nested controllers can `setErrors` for their own fields.
+
+Manual errors show whether or not the field is touched, and they make the form invalid until cleared.
+
+<ServerErrorsDemo client:load />
+
+## `additionalErrors`: declarative
+
+If the errors already live in state somewhere else (a mutation hook, a store), pass them as a prop:
+
+```ts
+const mutation = useRegisterMutation()
+const form = useController({
+  schema,
+  additionalErrors: mutation.error?.fieldErrors, // e.g. { email: 'Taken', address: { zip: 'Unknown' } }
+})
+```
+
+Leaves are errors (falsy means no error) and objects are nested forms. They're merged on top of
+validation results. You control when they go away.

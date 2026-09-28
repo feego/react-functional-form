@@ -1,0 +1,94 @@
+---
+title: Field arrays
+description: Lists of fields or forms that users can add to, remove from and reorder.
+---
+
+import FieldArrayDemo from '../../../components/demos/FieldArrayDemo'
+
+## Describe the list
+
+```ts
+const memberSchema = createForm([
+  ['name', createField<string>([requiredValidator])],
+  ['role', createField<string>()],
+])
+
+const schema = createForm([
+  ['members', createList(memberSchema, [createMinLengthValidator(1, 'Add at least one member')])],
+])
+```
+
+The values are a real array: `{ members: { name: string; role: string }[] }`. List-level validators
+receive the whole array, and their error is `members.validationResult[2]`.
+
+## Render and edit it
+
+A list is a nested form whose keys are indexes, so you get a controller for it the same way. Then
+`useFieldArray` gives you the operations and stable keys:
+
+```tsx
+function TeamForm() {
+  const form = useController({ schema, onSubmit })
+  const members = useController(useGetPropsForNestedForm(form)('members'))
+  const { items, append, remove, move } = useFieldArray(members)
+  const getPropsForMember = useGetPropsForNestedForm(members)
+
+  return (
+    <form onSubmit={form.onSubmit}>
+      {items.map(({ key, index }) => (
+        <MemberForm
+          key={key}
+          propsForForm={getPropsForMember(index)}
+          onRemove={() => remove(index)}
+        />
+      ))}
+      {members.validationResult[2] && <p>{members.validationResult[2]}</p>}
+      <button type="button" onClick={() => append({ name: '', role: '' })}>
+        Add member
+      </button>
+    </form>
+  )
+}
+```
+
+<FieldArrayDemo client:load />
+
+## Operations
+
+| Method                     | Description                                                 |
+| -------------------------- | ----------------------------------------------------------- |
+| `append(value \| values)`  | Adds items at the end                                       |
+| `prepend(value \| values)` | Adds items at the start                                     |
+| `insert(index, value)`     | Adds items at an index                                      |
+| `remove(index?)`           | Removes one index, several (`[0, 2]`), or all items         |
+| `move(from, to)`           | Moves an item                                               |
+| `swap(a, b)`               | Swaps two items                                             |
+| `update(index, value)`     | Replaces an item's value, keeping its key and touched state |
+| `replace(values)`          | Replaces all items and resets their state                   |
+
+Each operation keeps touched, visited and manual errors aligned with the items. New items start
+untouched, even after a submission, so a freshly added row doesn't show errors straight away. Operations
+fire `onChange` with an `arrayOperation` in the event metadata.
+
+Use `items[i].key` as the React key. It follows the item when it moves, so component state (focus, local
+UI state) stays with the right row.
+
+## Lists of plain fields
+
+For lists of primitives, use `useGetPropsForField` on the list controller with indexes:
+
+```tsx
+const tags = useController(getPropsForNestedForm('tags'))
+const { items, append } = useFieldArray(tags)
+const getPropsForTag = useGetPropsForField(tags)
+
+items.map(({ key, index }) => (
+  <TextInput key={key} label={`Tag ${index + 1}`} {...getPropsForTag(index)} />
+))
+```
+
+## Object-keyed lists
+
+Before `createList`, lists were modeled as forms with numeric keys (`createForm([[0, item], [1, item]])`),
+rebuilding the schema when items change. That still works, but `createList` + `useFieldArray` is simpler
+and produces real arrays.

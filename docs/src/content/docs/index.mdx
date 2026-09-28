@@ -1,0 +1,65 @@
+---
+title: react-functional-form
+description: Schema-first, fully controlled, composable forms for React.
+template: splash
+hero:
+  tagline: Schema-first, fully controlled, composable forms for React. Nested forms, field arrays, async validation and Zod/Valibot/ArkType support, in ~6 kB with zero dependencies.
+  actions:
+    - text: Get started
+      link: /react-functional-form/getting-started/introduction/
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/feego/react-functional-form
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components'
+import QuickStartDemo from '../../components/demos/QuickStartDemo'
+
+<CardGrid>
+  <Card title="Schema first" icon="document">
+    Describe your form once with `createForm`, `createField` and `createList`. Types are inferred
+    from it.
+  </Card>
+  <Card title="Fully controlled" icon="setting">
+    All state lives in plain React state that you can own, lift, persist or inspect. No refs or
+    hidden stores.
+  </Card>
+  <Card title="Composable" icon="puzzle">
+    Nested forms are just forms. Build an `AddressForm` once and plug it into any parent form.
+  </Card>
+  <Card title="Bring your validators" icon="approve-check">
+    Chainable validator functions, async validation, or any Standard Schema: Zod, Valibot, ArkType.
+  </Card>
+</CardGrid>
+
+## Try it
+
+<QuickStartDemo client:load />
+
+```tsx
+const schema = createForm([
+  ['email', createField<string>([requiredValidator])],
+  ['password', createField<string>([requiredValidator, createMinLengthValidator(8)])],
+  ['confirmPassword', createField<string>([createMatchesFieldValidator('password')])],
+])
+
+function SignUpForm() {
+  const form = useController({ schema, onSubmit: (values) => api.signUp(values) })
+  const getPropsForField = useGetPropsForField(form)
+
+  return (
+    <form onSubmit={form.onSubmit}>
+      <TextInput label="Email" {...getPropsForField('email')} />
+      <TextInput label="Password" type="password" {...getPropsForField('password')} />
+      <TextInput
+        label="Confirm password"
+        type="password"
+        {...getPropsForField('confirmPassword')}
+      />
+      <button disabled={form.submitState.isSubmitting}>Sign up</button>
+    </form>
+  )
+}
+```

@@ -1,0 +1,93 @@
+---
+title: Controlled & lifted state
+description: Own the form state yourself.
+---
+
+import DynamicSchemaDemo from '../../../components/demos/DynamicSchemaDemo'
+import PersistedDraftDemo from '../../../components/demos/PersistedDraftDemo'
+
+All form state is plain React state held in "state hooks": `[state, setState]` pairs.
+
+| Option             | State                                |
+| ------------------ | ------------------------------------ |
+| `valuesStateHook`  | values                               |
+| `touchedStateHook` | touched tree                         |
+| `visitedStateHook` | visited (focused at least once) tree |
+| `errorsStateHook`  | manual errors set with `setErrors`   |
+| `submitStateHook`  | submit state                         |
+
+By default `useController` creates each one itself. Pass any of them to own that piece of state.
+
+## Reading values before the controller: `useState`
+
+Sometimes the schema depends on the values, for example one schema per selected type, or items added
+dynamically. `useState` creates the state hooks up front, so you can read the values first:
+
+```tsx
+import { useController, useState as useFormState } from 'react-functional-form'
+
+function StepForm({ initialValues }) {
+  const formState = useFormState({ schema: buildSchema(initialValues), initialValues })
+  const [values] = formState.valuesStateHook
+  const schema = useMemo(() => buildSchema(values), [values])
+  const form = useController({ ...formState, schema })
+  // …
+}
+```
+
+<DynamicSchemaDemo client:load />
+
+## Lifting state to a parent
+
+```tsx
+function Parent() {
+  const valuesStateHook = useState({ name: 'Ada' })
+  const [values] = valuesStateHook
+
+  return (
+    <>
+      <Preview values={values} />
+      <ProfileForm valuesStateHook={valuesStateHook} />
+    </>
+  )
+}
+
+function ProfileForm({ valuesStateHook }) {
+  const form = useController({ schema, valuesStateHook })
+  // …
+}
+```
+
+Anything that looks like `useState`'s return value works, including a hook backed by a store, URL params
+or local storage. This draft is kept in localStorage (type, then reload the page):
+
+<PersistedDraftDemo client:only="react" />
+
+## Low-level setters
+
+The controller exposes `setValues`, `setTouched`, `setVisited`, `setErrors` and `setSubmitState` for batched
+updates that don't fire field events:
+
+```ts
+form.setValues((values) => ({ ...values, total: computeTotal(values) }))
+```
+
+Prefer `form.setFieldValue(name, value)` when you want the change to behave like user input: it fires
+`onChange` and clears the field's manual error.
+
+## Events
+
+For side effects, the controller calls `onChange`, `onFieldTouch`, `onFieldVisit`, `onFieldBlur` and
+`onFieldFocus` with event metadata:
+
+```ts
+{
+  fieldName,       // the field or nested form, in this form
+  fieldSchema,
+  values,          // before the change
+  validationResult,
+  nextValue,       // for changes
+  nestedFormEvent, // the metadata from the nested form, for events that bubbled up
+  arrayOperation,  // for field array operations
+}
+```
