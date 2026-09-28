@@ -268,15 +268,15 @@ That's what lets untyped code compile, and you can add types one field at a time
 
 ## Type reference
 
-| Type                                                                      | Description                                             |
-| ------------------------------------------------------------------------- | ------------------------------------------------------- |
-| `ValuesOf<S>`                                                             | Values of a schema                                      |
-| `TouchedOf<S>`, `VisitedOf<S>`, `DirtyOf<S>`                              | State trees                                             |
-| `ValidationResultOf<S>`                                                   | Validation result tree                                  |
-| `Controller<S>`                                                           | Return type of `useController`                          |
-| `ControllerProps<S>`                                                      | Props of `useController` (e.g. for sub-form components) |
-| `FieldProps<V, E, K>`                                                     | Return type of `getPropsForField`                       |
-| `FieldArray<Item>`                                                        | Return type of `useFieldArray`                          |
-| `Validator<V, E>`, `ValidateFunction`                                     | Field validator, form-level validate function           |
-| `FieldSchema<V>`, `FormSchema<Entries>`, `ListSchema<Item>`, `SchemaNode` | Schema nodes                                            |
-| `SubmitState`, `EventMetadata`, `DeepPartial<T>`, `StandardSchemaV1`      | Misc                                                    |
+| Type                                                                      | Description                                                                                                                                            |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ValuesOf<S>`                                                             | Values of a schema                                                                                                                                     |
+| `TouchedOf<S>`, `VisitedOf<S>`, `DirtyOf<S>`                              | State trees                                                                                                                                            |
+| `ValidationResultOf<S>`                                                   | Validation result tree                                                                                                                                 |
+| `Controller<S>`                                                           | Return type of `useController`                                                                                                                         |
+| `ControllerProps<S>`                                                      | Props of `useController` (e.g. for sub-form components)                                                                                                |
+| `FieldProps<V, E, K>`                                                     | Return type of `getPropsForField`. `K` (the name) defaults to `string`, so components typed `FieldProps<string>` can spread their props onto `<input>` |
+| `FieldArray<Item>`                                                        | Return type of `useFieldArray`                                                                                                                         |
+| `Validator<V, E>`, `ValidateFunction`                                     | Field validator, form-level validate function                                                                                                          |
+| `FieldSchema<V>`, `FormSchema<Entries>`, `ListSchema<Item>`, `SchemaNode` | Schema nodes                                                                                                                                           |
+| `SubmitState`, `EventMetadata`, `DeepPartial<T>`, `StandardSchemaV1`      | Misc                                                                                                                                                   |

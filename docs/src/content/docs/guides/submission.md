@@ -34,13 +34,22 @@ Extra arguments are passed through, which is handy for variants of the same subm
 
 ## Return value
 
-`form.onSubmit` always returns a promise of the validation result. The promise resolves after your
-`onSubmit` handler finishes and rejects if the handler throws or rejects:
+`form.onSubmit` always returns a promise of the validation result, which resolves after your `onSubmit`
+handler finishes:
 
 ```ts
 const result = await form.onSubmit()
 if (!result[0]) scrollToTop()
 ```
+
+If the handler throws or rejects, the error is stored in `submitState.submitError`. What happens to the
+promise depends on how `form.onSubmit` was called:
+
+- **Called directly** (`await form.onSubmit()`), the promise rejects, so you can catch the error.
+- **Called with an event**, i.e. used as an event handler (`<form onSubmit={form.onSubmit}>` or
+  `<button onClick={form.onSubmit}>`), the promise resolves anyway. Nothing could handle the rejection
+  there, and it would show up as an unhandled rejection (and, in Next.js, as the error overlay). Show
+  `submitState.submitError` in the UI instead.
 
 The work itself happens synchronously when validation and the handler are sync: fields are touched and
 `onSubmit` is called before `form.onSubmit()` returns. Only the result is wrapped in a promise, so callers

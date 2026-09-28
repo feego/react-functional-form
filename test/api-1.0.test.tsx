@@ -75,6 +75,55 @@ describe('onSubmit and trigger', () => {
   })
 })
 
+describe('submit errors when used as an event handler', () => {
+  const schema = createForm({ name: createField<string>() })
+
+  it.each([
+    ['rejects', async () => Promise.reject(new Error('Server down'))],
+    [
+      'throws',
+      () => {
+        throw new Error('Server down')
+      },
+    ],
+  ])('records the error without rejecting when the handler %s', async (_, onSubmit) => {
+    const Form = () => {
+      const form = useController({ schema, onSubmit })
+      return (
+        <form onSubmit={form.onSubmit}>
+          <button type="submit">Submit</button>
+          <output>{String((form.submitState.submitError as Error | undefined)?.message)}</output>
+        </form>
+      )
+    }
+    render(<Form />)
+
+    await act(async () => {
+      fireEvent.click(screen.getByText('Submit'))
+    })
+    // An unhandled rejection would fail this test run.
+    expect(screen.getByText('Server down')).toBeTruthy()
+  })
+
+  it('resolves with the validation result when called with an event', async () => {
+    const { result } = renderHook(() =>
+      useController({
+        schema,
+        onSubmit: () => {
+          throw new Error('Nope')
+        },
+      }),
+    )
+    const event = { type: 'click', preventDefault: vi.fn() }
+
+    await act(async () => {
+      await expect(result.current.onSubmit(event)).resolves.toEqual([true, { name: [true] }])
+    })
+    expect(event.preventDefault).not.toHaveBeenCalled()
+    expect((result.current.submitState.submitError as Error).message).toBe('Nope')
+  })
+})
+
 describe('mapError', () => {
   const schema = createForm({
     name: createField<string>([requiredValidator]),

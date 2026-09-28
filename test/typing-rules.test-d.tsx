@@ -15,6 +15,7 @@ import {
   useGetPropsForInput,
   useGetPropsForNestedForm,
   type Controller,
+  type FieldProps,
   type ControllerProps,
   type ValidationResultOf,
   type ValuesOf,
@@ -241,5 +242,17 @@ describe('1.0 API typing', () => {
     expectTypeOf(getPropsForInput('name').name).toEqualTypeOf<string>()
     // @ts-expect-error nested forms aren't inputs
     getPropsForInput('address')
+  })
+})
+
+describe('FieldProps', () => {
+  it('defaults the name to string, so components typed with it can spread onto inputs', () => {
+    const TextInput = ({ error: _error, ...props }: FieldProps<string>) => (
+      <input {...props} value={props.value ?? ''} />
+    )
+    const form = useController({ schema: createForm({ email: createField<string>() }) })
+    expectTypeOf(TextInput).parameter(0).toMatchTypeOf<FieldProps<string>>()
+    const props: FieldProps<string> = useGetPropsForField(form)('email')
+    expectTypeOf(props.name).toEqualTypeOf<string>()
   })
 })

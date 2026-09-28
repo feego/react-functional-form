@@ -155,8 +155,10 @@ export interface Controller<S extends SchemaNode = any, E = any> {
   onChange: (eventMetadata: EventMetadata, reducer: (values: any) => any, ...args: any[]) => void
   /**
    * Touches every field, validates, and calls `onSubmit` with the values if valid (or `onInvalid`
-   * otherwise). Returns a promise of the validation result, which resolves once `onSubmit` finishes and
-   * rejects if it throws. Calls `preventDefault` when given a submit event.
+   * otherwise). Returns a promise of the validation result, which resolves once `onSubmit` finishes.
+   * When `onSubmit` throws, the error is stored in `submitState.submitError`, and the promise rejects if
+   * this was called directly. When called with an event (i.e. used as an event handler), it resolves
+   * instead, since nothing could handle the rejection. Calls `preventDefault` when given a submit event.
    */
   onSubmit: (...args: any[]) => Promise<ValidationResultOf<S>>
   onFieldTouchedChange: (
@@ -198,11 +200,14 @@ export interface Controller<S extends SchemaNode = any, E = any> {
   getFieldState: <K extends ChildName<S>>(name: K) => FieldState<ValuesOf<ChildSchema<S, K>>, E>
 }
 
-const isSubmitEvent = (value: any) =>
+/** Whether a value looks like a DOM or React event. */
+const isEvent = (value: any) =>
   value !== null &&
   typeof value === 'object' &&
   typeof value.preventDefault === 'function' &&
-  value.type === 'submit'
+  typeof value.type === 'string'
+
+const isSubmitEvent = (value: any) => isEvent(value) && value.type === 'submit'
 
 const noop = () => {}
 
@@ -478,6 +483,14 @@ function useController(props: ControllerProps<any>): Controller<any> {
                 isSubmitted: true,
                 ...state,
               }))
+            // Used as an event handler (`<form onSubmit={form.onSubmit}>`), nobody can handle a rejected promise,
+            // so errors are only recorded in `submitError`. Called directly, the promise rejects.
+            const shouldRethrow = !isEvent(rest[0])
+            const fail = (error: unknown, validationResult: ValidationResult): ValidationResult => {
+              finish({ isSubmitSuccessful: false, submitError: error })
+              if (shouldRethrow) throw error
+              return validationResult
+            }
             const submit = (validationResult: ValidationResult): MaybePromise<ValidationResult> => {
               if (!validationResult[0]) {
                 finish({ isSubmitSuccessful: false, submitError: undefined })
@@ -490,8 +503,7 @@ function useController(props: ControllerProps<any>): Controller<any> {
               try {
                 submission = baseOnSubmit(values, ...rest)
               } catch (error) {
-                finish({ isSubmitSuccessful: false, submitError: error })
-                throw error
+                return fail(error, validationResult)
               }
 
               if (isPromise(submission)) {
@@ -500,10 +512,7 @@ function useController(props: ControllerProps<any>): Controller<any> {
                     finish({ isSubmitSuccessful: true, submitError: undefined })
                     return validationResult
                   },
-                  (error) => {
-                    finish({ isSubmitSuccessful: false, submitError: error })
-                    throw error
-                  },
+                  (error) => fail(error, validationResult),
                 )
               }
 
@@ -516,10 +525,7 @@ function useController(props: ControllerProps<any>): Controller<any> {
             try {
               return Promise.resolve(
                 isPromise<ValidationResult>(validation)
-                  ? validation.then(submit, (error) => {
-                      finish({ isSubmitSuccessful: false, submitError: error })
-                      throw error
-                    })
+                  ? validation.then(submit, (error) => fail(error, [false, {}]))
                   : submit(validation),
               )
             } catch (error) {

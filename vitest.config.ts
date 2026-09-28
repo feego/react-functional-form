@@ -7,7 +7,7 @@ export default defineConfig({
     include: ['test/**/*.test.{ts,tsx}'],
     typecheck: {
       enabled: true,
-      include: ['test/**/*.test-d.ts'],
+      include: ['test/**/*.test-d.{ts,tsx}'],
     },
     coverage: {
       include: ['src/**'],

@@ -56,7 +56,7 @@ export const getEventValue = (eventOrValue: any) => {
   }
 }
 
-export interface FieldProps<V = any, E = any, K = PropertyKey> {
+export interface FieldProps<V = any, E = any, K = string> {
   name: K
   value: V | undefined
   error: E
