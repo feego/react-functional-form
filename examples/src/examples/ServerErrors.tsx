@@ -7,7 +7,7 @@ import {
   requiredValidator,
   useController,
   useGetPropsForField,
-} from 'react-functional-form'
+} from '@feego/react-functional-form'
 import { Button, TextInput } from '../components/ui'
 import { api, notify } from '../components/fakeApi'
 

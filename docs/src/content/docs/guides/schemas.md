@@ -6,7 +6,12 @@ description: Describe forms with fields, nested forms and lists.
 A schema is a tree built from three kinds of nodes.
 
 ```ts
-import { createField, createForm, createList, requiredValidator } from 'react-functional-form'
+import {
+  createField,
+  createForm,
+  createList,
+  requiredValidator,
+} from '@feego/react-functional-form'
 
 const schema = createForm({
   name: createField<string>([requiredValidator]), // a field

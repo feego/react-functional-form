@@ -9,7 +9,7 @@ import {
   useController,
   useFormContext,
   useGetPropsForField,
-} from 'react-functional-form'
+} from '@feego/react-functional-form'
 import { Button, TextInput } from '../components/ui'
 import { notify, wait } from '../components/fakeApi'
 

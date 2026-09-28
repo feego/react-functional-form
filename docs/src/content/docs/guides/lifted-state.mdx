@@ -24,7 +24,7 @@ Sometimes the schema depends on the values, for example one schema per selected 
 dynamically. `useFormState` creates the state hooks up front, so you can read the values first:
 
 ```tsx
-import { useController, useFormState } from 'react-functional-form'
+import { useController, useFormState } from '@feego/react-functional-form'
 
 function StepForm({ initialValues }) {
   const formState = useFormState({ schema: buildSchema(initialValues), initialValues })

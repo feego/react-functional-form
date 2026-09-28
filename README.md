@@ -1,8 +1,8 @@
 # react-functional-form
 
-[![npm](https://img.shields.io/npm/v/react-functional-form)](https://www.npmjs.com/package/react-functional-form)
+[![npm](https://img.shields.io/npm/v/@feego/react-functional-form)](https://www.npmjs.com/package/@feego/react-functional-form)
 [![CI](https://github.com/feego/react-functional-form/actions/workflows/ci.yml/badge.svg)](https://github.com/feego/react-functional-form/actions/workflows/ci.yml)
-[![license](https://img.shields.io/npm/l/react-functional-form)](./LICENSE)
+[![license](https://img.shields.io/npm/l/@feego/react-functional-form)](./LICENSE)
 
 Schema-first, fully controlled, composable forms for React.
 
@@ -21,7 +21,7 @@ Schema-first, fully controlled, composable forms for React.
 ## Install
 
 ```sh
-npm install react-functional-form
+npm install @feego/react-functional-form
 ```
 
 ## Example
@@ -35,7 +35,7 @@ import {
   requiredValidator,
   useController,
   useGetPropsForField,
-} from 'react-functional-form'
+} from '@feego/react-functional-form'
 
 const schema = createForm({
   email: createField<string>([requiredValidator]),

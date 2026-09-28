@@ -4,7 +4,7 @@ description: Create form state hooks ahead of the controller.
 ---
 
 ```ts
-import { useFormState } from 'react-functional-form'
+import { useFormState } from '@feego/react-functional-form'
 
 const formState = useFormState({ schema, initialValues, validateOnInit })
 const form = useController({ ...formState, schema })

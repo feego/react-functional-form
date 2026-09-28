@@ -1,7 +1,12 @@
 /**
  * An edit form: dirty tracking against the saved values, discarding changes, and saving with `reset`.
  */
-import { createField, createForm, useController, useGetPropsForField } from 'react-functional-form'
+import {
+  createField,
+  createForm,
+  useController,
+  useGetPropsForField,
+} from '@feego/react-functional-form'
 import { Button, TextInput } from '../components/ui'
 import { api } from '../components/fakeApi'
 

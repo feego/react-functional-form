@@ -1,4 +1,4 @@
-# react-functional-form
+# @feego/react-functional-form
 
 ## 1.0.0
 
@@ -7,6 +7,9 @@
 - First stable release: a modernized, fully typed and documented react-functional-form. The schema-first,
   controlled API (`createForm`, `createField`, `useController`, `useGetPropsForField`,
   `useGetPropsForNestedForm`, validator chains) is unchanged.
+
+  The package is now published as `@feego/react-functional-form`. The unscoped `react-functional-form`
+  package stays at 0.1.6.
 
   ### New features
   - **Object syntax for forms:** `createForm({ email: createField<string>(), address: addressSchema })`,
@@ -54,6 +57,6 @@
     controller methods (`reset`, `trigger`, `setErrors`, `getFieldState`) and `validate` instead.
   - `validate` is typed as possibly returning a promise (it only does when a validator is async).
   - The package is now ESM-first with an `exports` map (`dist/index.js` and `dist/index.cjs`). Deep imports
-    of the old `dist` files no longer work; import from `react-functional-form`.
+    of the old `dist` files no longer work; import from `@feego/react-functional-form`.
   - The React peer dependency is now `>=16.8` (hooks), and TypeScript 5.4+ is required for the types.
   - `null` values in `additionalErrors` now mean "no error" instead of throwing.

@@ -20,7 +20,7 @@ A validator that passes should return the previous result, so earlier errors sur
 does exactly that:
 
 ```ts
-import { identityValidator } from 'react-functional-form'
+import { identityValidator } from '@feego/react-functional-form'
 
 const noSpaces = (result, value) =>
   typeof value === 'string' && value.includes(' ') ? [false, 'NoSpaces'] : identityValidator(result)
@@ -33,7 +33,7 @@ Validators run in order. **When several fail, the last failing one wins.**
 For most custom rules, write a function that returns an error (or nothing) and wrap it:
 
 ```ts
-import { createValidator } from 'react-functional-form'
+import { createValidator } from '@feego/react-functional-form'
 
 const noSpaces = createValidator((value: string) => (value?.includes(' ') ? 'NoSpaces' : undefined))
 

@@ -208,7 +208,7 @@ useController(members.getPropsForItem(0)).values // { email: string }: controlle
 Sub-form components take the props for their controller, typed with their schema:
 
 ```tsx
-import type { ControllerProps } from 'react-functional-form'
+import type { ControllerProps } from '@feego/react-functional-form'
 
 function AddressForm({ propsForForm }: { propsForForm: ControllerProps<typeof addressSchema> }) {
   const form = useController(propsForForm) // Controller<typeof addressSchema>

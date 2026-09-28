@@ -16,7 +16,7 @@ import {
   createMatchesFieldValidator,
   createMinLengthValidator,
   requiredValidator,
-} from 'react-functional-form'
+} from '@feego/react-functional-form'
 
 const schema = createForm({
   email: createField<string>([requiredValidator]),
@@ -30,7 +30,7 @@ const schema = createForm({
 `useController` holds the form state and validates it. `onSubmit` is only called with valid values.
 
 ```tsx
-import { useController, useGetPropsForField } from 'react-functional-form'
+import { useController, useGetPropsForField } from '@feego/react-functional-form'
 
 function SignUpForm() {
   const form = useController({

@@ -14,7 +14,7 @@
     "examples": "workspace:*",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "react-functional-form": "workspace:*",
+    "@feego/react-functional-form": "workspace:*",
     "zod": "^4.6.5"
   },
   "devDependencies": {

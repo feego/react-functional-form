@@ -4,11 +4,11 @@ description: Install react-functional-form.
 ---
 
 ```sh
-npm install react-functional-form
+npm install @feego/react-functional-form
 # or
-pnpm add react-functional-form
+pnpm add @feego/react-functional-form
 # or
-yarn add react-functional-form
+yarn add @feego/react-functional-form
 ```
 
 Requirements:
