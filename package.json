@@ -1,6 +1,6 @@
 {
   "name": "@feego/react-functional-form",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Schema-first, fully controlled, composable forms for React — with nested forms, field arrays, async validation and Standard Schema (Zod, Valibot, ArkType) support.",
   "author": "Rui Monteiro",
   "license": "MIT",
